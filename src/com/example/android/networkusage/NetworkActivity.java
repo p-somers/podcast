@@ -94,7 +94,7 @@ public class NetworkActivity extends Activity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        //test
+        //test oh come on.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         text = (TextView)findViewById(R.id.textview);
