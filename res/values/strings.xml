@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  Copyright (C) 2012 The Android Open Source Project
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+
+<resources>
+
+    <string name="app_name">Podcast Test</string>
+
+    <!--  Menu items -->
+    <string name="settings">Settings</string>
+    <string name="refresh">Refresh</string>
+
+    <!--  NetworkActivity -->
+    <string name="page_title">Stuff found:</string>
+    <string name="updated">Last updated:</string>
+    <string name="lost_connection">Lost connection.</string>
+    <string name="wifi_connected">Wi-Fi reconnected.</string>
+    <string name="connection_error">Unable to load content. Check your network connection.</string>
+    <string name="json_error">Error parsing JSON.</string>
+
+    <!-- podcast XML items -->
+    <string name="wrapperType">Wrapper Type</string>
+    <string name="kind">Kind</string>
+    <string name="collectionId">Collection id</string>
+    <string name="trackId">Track id</string>
+    <string name="artistName">Artist Name</string>
+    <string name="collectionName">Collection Name</string>
+    <string name="trackName">Track Name</string>
+    <string name="collectionCensoredName">Censored Collection Name</string>
+    <string name="trackCensoredName">Censored Track Name</string>
+    <string name="collectionViewUrl">CollectionView URL</string>
+    <string name="feedUrl">Feed URL</string>
+    <string name="trackViewUrl">TrackView URL</string>
+    <string name="artworkUrl30">Artwork URL (30)</string>
+    <string name="artworkUrl60">Artwork URL (60)</string>
+    <string name="artworkUrl100">Artwork URL (100)</string>
+    <string name="collectionPrice">Collection Price</string>
+    <string name="trackPrice">Track Price</string>
+    <string name="releaseDate">Release Date</string>
+    <string name="collectionExplicitness">Collection Explicitness</string>
+    <string name="trackExplicitness">Track Explicitness</string>
+    <string name="trackCount">Track Count</string>
+    <string name="country">Country</string>
+    <string name="currency">Currency</string>
+    <string name="primaryGenreName">Primary Genre Name</string>
+    <string name="artworkUrl600">Artwork URL (600)</string>
+    <string name="genreIds">Genre ids</string>
+    <string name="genres">Genres</string>
+
+</resources>
