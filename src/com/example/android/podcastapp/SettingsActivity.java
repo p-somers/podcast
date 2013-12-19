@@ -12,13 +12,12 @@
  * the License.
  */
 
-package com.example.android.networkusage;
+package com.example.android.podcastapp;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
-import com.example.android.networkusage.R;
 
 /**
  * This preference activity has in its manifest declaration an intent filter for
@@ -61,6 +60,6 @@ public class SettingsActivity extends PreferenceActivity
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         // Sets refreshDisplay to true so that when the user returns to the main
         // activity, the display refreshes to reflect the new settings.
-        NetworkActivity.refreshDisplay = true;
+        PodcastActivity.refreshDisplay = true;
     }
 }

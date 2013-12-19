@@ -20,11 +20,14 @@
 
     <string name="app_name">Podcast Test</string>
 
+    <!-- Main screen -->
+    <string name="to_search_screen">Search for a podcast</string>
+
     <!--  Menu items -->
     <string name="settings">Settings</string>
     <string name="refresh">Refresh</string>
 
-    <!--  NetworkActivity -->
+    <!--  PodcastActivity -->
     <string name="page_title">Stuff found:</string>
     <string name="updated">Last updated:</string>
     <string name="lost_connection">Lost connection.</string>

@@ -12,7 +12,7 @@
  * the License.
  */
 
-package com.example.android.networkusage;
+package com.example.android.podcastapp;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -31,46 +31,26 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Scanner;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-/**
- * Main Activity for the sample application.
- *
- * This activity does the following:
- *
- * o Presents a WebView screen to users. This WebView has a list of HTML links to the latest
- *   questions tagged 'android' on stackoverflow.com.
- *
- * o Parses the StackOverflow XML feed using XMLPullParser.
- *
- * o Uses AsyncTask to download and process the XML feed.
- *
- * o Monitors preferences and the device's network connection to determine whether
- *   to refresh the WebView content.
- */
-public class NetworkActivity extends Activity {
+public class PodcastActivity extends Activity {
     private static Context context;
     public static final String WIFI = "Wi-Fi";
     public static final String ANY = "Any";
@@ -91,27 +71,39 @@ public class NetworkActivity extends Activity {
     private NetworkReceiver receiver = new NetworkReceiver();
 
     private TextView text;
+    private EditText search;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        //test oh come on.
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        text = (TextView)findViewById(R.id.textview);
+        //search = (EditText)findViewById(R.id.search);
         // Register BroadcastReceiver to track connection changes.
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkReceiver();
         this.registerReceiver(receiver, filter);
-        NetworkActivity.context = getApplicationContext();
+        PodcastActivity.context = getApplicationContext();
+        /**
+         * adding a handler for catching crashes, for debugging purposes.
+         */
         Thread.UncaughtExceptionHandler mUEhandler = new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread thread, Throwable throwable) {
-                Log.d("test","WOAH! "+throwable.getMessage());
-                Log.e("test","Hey, look! ",throwable);
+                Log.d("test",throwable.getMessage());
+                Log.e("test","",throwable);
             }
         };
         Thread.setDefaultUncaughtExceptionHandler(mUEhandler);
         //new XMLParser().execute("http://www.wheb.com/podcast/themorningbuzz.xml");
+    }
+
+    public void onClick(View view){
+        switch (view.getId()){
+            case R.id.to_search_button:
+                Intent searchActivity = new Intent(getBaseContext(), SearchActivity.class);
+                startActivity(searchActivity);
+            break;
+        }
     }
 
     // Refreshes the display if the network connection and the
@@ -126,17 +118,8 @@ public class NetworkActivity extends Activity {
         // Retrieves a string value for the preferences. The second parameter
         // is the default value to use if a preference value is not found.
         sPref = sharedPrefs.getString("listPref", "Wi-Fi");
-
         updateConnectedFlags();
-
-        // Only loads the page if refreshDisplay is true. Otherwise, keeps previous
-        // display. For example, if the user has set "Wi-Fi only" in prefs and the
-        // device loses its Wi-Fi connection midway through the user using the app,
-        // you don't want to refresh the display--this would force the display of
-        // an error page instead of stackoverflow.com content.
-        if (refreshDisplay) {
-            loadPage();
-        }
+        loadPage();
     }
 
     @Override
@@ -172,10 +155,9 @@ public class NetworkActivity extends Activity {
     // causing a delay that results in a poor user experience, always perform
     // network operations on a separate thread from the UI.
     private void loadPage() {
-        if (true){//((sPref.equals(ANY)) && (wifiConnected || mobileConnected))
-              //  || ((sPref.equals(WIFI)) && (wifiConnected))) {
-            // AsyncTask subclass
-            new DownloadXmlTask().execute(URL);
+        if ( ((sPref.equals(ANY)) && (wifiConnected || mobileConnected))
+                || ((sPref.equals(WIFI)) && (wifiConnected))) {
+            new DownloadPodcastTask().execute(URL);
         } else {
             showErrorPage();
         }
@@ -216,7 +198,7 @@ public class NetworkActivity extends Activity {
     }
 
     // Implementation of AsyncTask used to download XML feed.
-    private class DownloadXmlTask extends AsyncTask<String, Void, Values> {
+    private class DownloadPodcastTask extends AsyncTask<String, Void, Values> {
 
         @Override
         protected Values doInBackground(String... urls) {
@@ -224,19 +206,15 @@ public class NetworkActivity extends Activity {
                 return loadXmlFromNetwork(urls[0]);
             } catch (IOException e) {
                 return new Values( null, getResources().getString(R.string.connection_error) );
-            } catch (XmlPullParserException e) {
-                return new Values( null,  (e.getMessage()+"\n"+e.getStackTrace()) );
             }
         }
 
         @Override
         protected void onPostExecute(Values values) {
-            text.setText(values.podcast.getArtistName());
-            Log.d("test","yeah!");
             Bitmap myBitmap = BitmapFactory.decodeFile(values.podcast.getArtworkPath("30"));
             try{
-                ImageView imageview = (ImageView) findViewById(R.id.imagethumbnail);
-                imageview.setImageBitmap(myBitmap);
+                //ImageView imageview = (ImageView) findViewById(R.id.imagethumbnail);
+                //imageview.setImageBitmap(myBitmap);
             }catch(Exception ex){
                 Log.e("test","lol",ex);
             }
@@ -254,7 +232,7 @@ public class NetworkActivity extends Activity {
 
     // Uploads XML from stackoverflow.com, parses it, and combines it with
     // HTML markup. Returns HTML string.
-    private Values loadXmlFromNetwork(String urlString) throws XmlPullParserException, IOException {
+    private Values loadXmlFromNetwork(String urlString) throws IOException {
         InputStream stream = null;
         JSONParser podcastUrlParser = new JSONParser();
         Podcast podcast = null;
@@ -272,9 +250,19 @@ public class NetworkActivity extends Activity {
 
         try {
             stream = downloadUrl(urlString);
-            podcast = podcastUrlParser.parse(stream);
+            Scanner scan = new Scanner(stream);
+            StringBuilder result = new StringBuilder();
+            while( scan.hasNextLine() ) {
+                String line = scan.nextLine();
+                result.append( line );
+            }
+            JSONObject json = new JSONObject(result.toString());
+            JSONObject info = json.getJSONArray("results").getJSONObject(0);
+            podcast = podcastUrlParser.toPodcastObj(info);
         // Makes sure that the InputStream is closed after the app is
         // finished using it.
+        } catch (JSONException e) {
+            Log.e("test", "", e);
         } finally {
             if (stream != null) {
                 stream.close();

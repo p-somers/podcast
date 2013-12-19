@@ -1,4 +1,4 @@
-package com.example.android.networkusage;
+package com.example.android.podcastapp;
 
 import android.os.AsyncTask;
 import android.util.Log;
@@ -30,7 +30,7 @@ public class XMLParser extends AsyncTask<String, Void, Void> {
             RssHandler theRSSHandler=new RssHandler();
             xmlreader.setContentHandler(theRSSHandler);
             InputSource is=new InputSource(url.openStream());
-            xmlreader.parse(is);
+            xmlreader.toPodcastObj(is);
             return theRSSHandler.getFeed();
             */
             URL url = new URL(urls[0]);

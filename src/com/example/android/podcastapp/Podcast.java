@@ -1,6 +1,5 @@
-package com.example.android.networkusage;
+package com.example.android.podcastapp;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Environment;
@@ -16,6 +15,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Currency;
 import java.util.Date;
+
+import static java.lang.System.*;
 
 /**
  * Created by petersomers on 8/29/13.
@@ -80,11 +81,9 @@ public class Podcast {
         currency = Currency.getInstance(curr);
         primaryGenreName = pgenre;
         genreIds = new int[gids.length];
-        for( int i = 0; i < gids.length; i++ )
-            genreIds[i] = gids[i];
+        arraycopy(gids, 0, genreIds, 0, gids.length);
         genres = new String[genres_arr.length];
-        for( int i = 0; i < genres_arr.length; i++ )
-            genres[i] = genres_arr[i];
+        arraycopy(genres_arr, 0, genres, 0, genres_arr.length);
         artworkFileExtension = art30.substring(art30.lastIndexOf('.')+1);
         try {
             downloadArtworkFromUrl(new URL(art30), "30");
@@ -114,7 +113,7 @@ public class Podcast {
         try {
             InputStream in = url.openStream();
             String external = Environment.getExternalStorageDirectory().toString();
-            File meta = new File(NetworkActivity.getAppContext().getFilesDir(),"meta");
+            File meta = new File(PodcastActivity.getAppContext().getFilesDir(),"meta");
             meta.mkdirs();
             File dir = new File(meta,artistName.replace(' ','_'));
             dir.mkdirs();
