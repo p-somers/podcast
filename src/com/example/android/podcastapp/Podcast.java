@@ -109,6 +109,14 @@ public class Podcast {
             return null;
         }
     }
+
+    /**
+     * This method Downloads the artwork for the image of the specified dimension.
+     * Note: it does NOT use an AsyncTask (yet) because it's more efficient to just create
+     * one background thread wherever the podcasts are being created.
+     * @param url
+     * @param dimension
+     */
     public void downloadArtworkFromUrl(URL url, String dimension) {
         try {
             InputStream in = url.openStream();

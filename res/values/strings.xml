@@ -64,4 +64,9 @@
     <string name="genreIds">Genre ids</string>
     <string name="genres">Genres</string>
 
+    <!-- Search Activity Items -->
+    <string name="search_button_text">Search</string>
+    <string name="search_result_title">Title</string>
+    <string name="search_result_description">Description</string>
+
 </resources>

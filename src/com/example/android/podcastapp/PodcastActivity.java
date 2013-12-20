@@ -20,11 +20,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -32,30 +29,13 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.view.Window;
 import android.widget.Toast;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.xmlpull.v1.XmlPullParserException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Scanner;
 
 public class PodcastActivity extends Activity {
     private static Context context;
     public static final String WIFI = "Wi-Fi";
     public static final String ANY = "Any";
-    private static final String URL =
-            "https://itunes.apple.com/search?term=greg+and+the+morning+buzz&limit=25&media=podcast";
 
     // Whether there is a Wi-Fi connection.
     private static boolean wifiConnected = false;
@@ -68,16 +48,13 @@ public class PodcastActivity extends Activity {
     public static String sPref = null;
 
     // The BroadcastReceiver that tracks network connectivity changes.
-    private NetworkReceiver receiver = new NetworkReceiver();
-
-    private TextView text;
-    private EditText search;
+    private NetworkReceiver receiver;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        //search = (EditText)findViewById(R.id.search);
+
         // Register BroadcastReceiver to track connection changes.
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         receiver = new NetworkReceiver();
@@ -94,7 +71,6 @@ public class PodcastActivity extends Activity {
             }
         };
         Thread.setDefaultUncaughtExceptionHandler(mUEhandler);
-        //new XMLParser().execute("http://www.wheb.com/podcast/themorningbuzz.xml");
     }
 
     public void onClick(View view){
@@ -119,7 +95,6 @@ public class PodcastActivity extends Activity {
         // is the default value to use if a preference value is not found.
         sPref = sharedPrefs.getString("listPref", "Wi-Fi");
         updateConnectedFlags();
-        loadPage();
     }
 
     @Override
@@ -150,29 +125,6 @@ public class PodcastActivity extends Activity {
         }
     }
 
-    // Uses AsyncTask subclass to download the XML feed from stackoverflow.com.
-    // This avoids UI lock up. To prevent network operations from
-    // causing a delay that results in a poor user experience, always perform
-    // network operations on a separate thread from the UI.
-    private void loadPage() {
-        if ( ((sPref.equals(ANY)) && (wifiConnected || mobileConnected))
-                || ((sPref.equals(WIFI)) && (wifiConnected))) {
-            new DownloadPodcastTask().execute(URL);
-        } else {
-            showErrorPage();
-        }
-    }
-
-    // Displays an error if the app is unable to load content.
-    private void showErrorPage() {
-        setContentView(R.layout.main);
-
-        // The specified network connection is not available. Displays error message.
-        //WebView myWebView = (WebView) findViewById(R.id.webview);
-        //myWebView.loadData(getResources().getString(R.string.connection_error),
-        //        "text/html", null);
-    }
-
     // Populates the activity's options menu.
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -190,100 +142,11 @@ public class PodcastActivity extends Activity {
                 startActivity(settingsActivity);
                 return true;
         case R.id.refresh:
-                loadPage();
+                //loadPage();
                 return true;
         default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    // Implementation of AsyncTask used to download XML feed.
-    private class DownloadPodcastTask extends AsyncTask<String, Void, Values> {
-
-        @Override
-        protected Values doInBackground(String... urls) {
-            try {
-                return loadXmlFromNetwork(urls[0]);
-            } catch (IOException e) {
-                return new Values( null, getResources().getString(R.string.connection_error) );
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Values values) {
-            Bitmap myBitmap = BitmapFactory.decodeFile(values.podcast.getArtworkPath("30"));
-            try{
-                //ImageView imageview = (ImageView) findViewById(R.id.imagethumbnail);
-                //imageview.setImageBitmap(myBitmap);
-            }catch(Exception ex){
-                Log.e("test","lol",ex);
-            }
-
-        }
-    }
-    private class Values {
-        protected Podcast podcast;
-        protected String htmlString;
-        public Values(Podcast p, String html){
-            podcast = p;
-            htmlString = html;
-        }
-    }
-
-    // Uploads XML from stackoverflow.com, parses it, and combines it with
-    // HTML markup. Returns HTML string.
-    private Values loadXmlFromNetwork(String urlString) throws IOException {
-        InputStream stream = null;
-        JSONParser podcastUrlParser = new JSONParser();
-        Podcast podcast = null;
-        Calendar rightNow = Calendar.getInstance();
-        DateFormat formatter = new SimpleDateFormat("MMM dd h:mmaa");
-
-        // Checks whether the user set the preference to include summary text
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean pref = sharedPrefs.getBoolean("summaryPref", false);
-
-        StringBuilder htmlString = new StringBuilder();
-        htmlString.append("<h3>" + getResources().getString(R.string.page_title) + "</h3>");
-        htmlString.append("<em>" + getResources().getString(R.string.updated) + " " +
-                formatter.format(rightNow.getTime()) + "</em>");
-
-        try {
-            stream = downloadUrl(urlString);
-            Scanner scan = new Scanner(stream);
-            StringBuilder result = new StringBuilder();
-            while( scan.hasNextLine() ) {
-                String line = scan.nextLine();
-                result.append( line );
-            }
-            JSONObject json = new JSONObject(result.toString());
-            JSONObject info = json.getJSONArray("results").getJSONObject(0);
-            podcast = podcastUrlParser.toPodcastObj(info);
-        // Makes sure that the InputStream is closed after the app is
-        // finished using it.
-        } catch (JSONException e) {
-            Log.e("test", "", e);
-        } finally {
-            if (stream != null) {
-                stream.close();
-            }
-        }
-        return new Values(podcast,htmlString.toString());
-    }
-
-    // Given a string representation of a URL, sets up a connection and gets
-    // an input stream.
-    private InputStream downloadUrl(String urlString) throws IOException {
-        URL url = new URL(urlString);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setReadTimeout(10000 /* milliseconds */);
-        conn.setConnectTimeout(15000 /* milliseconds */);
-        conn.setRequestMethod("GET");
-        conn.setDoInput(true);
-        // Starts the query
-        conn.connect();
-        InputStream stream = conn.getInputStream();
-        return stream;
     }
 
     /**

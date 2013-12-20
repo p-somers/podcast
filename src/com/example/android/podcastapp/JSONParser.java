@@ -21,50 +21,93 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
+
 public class JSONParser {
 
     public Podcast toPodcastObj(JSONObject info) throws IOException {
         Podcast podcast = null;
-        try {
-            String wt = info.getString("wrapperType");
-            int cid = info.getInt("collectionId");
-            int tid = info.getInt("trackId");
-            String aname = info.getString("artistName");
-            String cname = info.getString("collectionName");
-            String tname = info.getString("trackName");
-            String cname_cens = info.getString("collectionCensoredName");
-            String tname_cens = info.getString("trackCensoredName");
-            String cvu = info.getString("collectionViewUrl");
-            String furl = info.getString("feedUrl");
-            String turl = info.getString("trackViewUrl");
-            String a30 = info.getString("artworkUrl30");
-            String a60 = info.getString("artworkUrl60");
-            String a100 = info.getString("artworkUrl100");
-            String a600 = info.getString("artworkUrl600");
-            float cprice = (float)info.getLong("collectionPrice");
-            float tprice = (float)info.getLong("trackPrice");
-            String rdate = info.getString("releaseDate");
-            boolean c_exp = info.getString("collectionExplicitness").equals("explicit");
-            boolean t_exp = info.getString("trackExplicitness").equals("explicit");
-            int tcount = info.getInt("trackCount");
-            String country = info.getString("country");
-            String curr = info.getString("currency");
-            String pgenrename = info.getString("primaryGenreName");
-            JSONArray json_gids = info.getJSONArray("genreIds");
-            int[] gids = new int[json_gids.length()];
-            for(int i = 0; i < json_gids.length(); i++)
-                gids[i]=json_gids.getInt(i);
-            JSONArray json_genres = info.getJSONArray("genres");
-            String[] genres = new String[json_genres.length()];
-            for(int i = 0; i < json_genres.length(); i++)
-                genres[i]=json_genres.getString(i);
-            podcast = new Podcast(wt,cid,tid,aname,cname,tname,cname_cens,tname_cens,
-                    cvu,furl,turl,a30,a60,a100,a600,cprice,tprice,rdate,c_exp,t_exp,tcount,
-                    country,curr,pgenrename,gids,genres);
-        } catch( JSONException ex ) {
-                Log.e("test","error",ex);
+        int cid = getInt(info,"collectionId");
+        int tid = getInt(info,"trackId");
+        int tcount = getInt(info,"trackCount");
+        float cprice = getFloat(info, "collectionPrice");
+        float tprice = getFloat(info, "trackPrice");
+        String wt = getString(info, "wrapperType");
+        String aname = getString(info, "artistName");
+        String cname = getString(info, "collectionName");
+        String tname = getString(info,"trackName");
+        String cname_cens = getString(info,"collectionCensoredName");
+        String tname_cens = getString(info,"trackCensoredName");
+        String cvu  = getString(info,"collectionViewUrl");
+        String furl = getString(info,"feedUrl");
+        String turl = getString(info,"trackViewUrl");
+        String a30  = getString(info,"artworkUrl30");
+        String a60  = getString(info, "artworkUrl60");
+        String a100 = getString(info, "artworkUrl100");
+        String a600 = getString(info, "artworkUrl600");
+        String rdate = getString(info, "releaseDate");
+        String country = getString(info, "country");
+        String curr = getString(info, "currency");
+        String pgenrename = getString(info, "primaryGenreName");
+        boolean c_exp = is_explicit(info, "collectionExplicitness");
+        boolean t_exp = is_explicit(info, "trackExplicitness");
+        int[] gids = int_array(info,"genreIds");
+        String[] genres = string_array(info,"genres");
+        podcast = new Podcast(wt,cid,tid,aname,cname,tname,cname_cens,tname_cens,
+                cvu,furl,turl,a30,a60,a100,a600,cprice,tprice,rdate,c_exp,t_exp,tcount,
+                country,curr,pgenrename,gids,genres);
+        return podcast;
+    }
+    //for gracefully handling exceptions
+    private String getString(JSONObject info, String tag){
+        try{
+            return info.getString(tag);
+        } catch(JSONException ex) {
+            return tag;
         }
-    return podcast;
+    }
+    private int getInt(JSONObject info, String tag){
+        try{
+            return info.getInt(tag);
+        } catch(JSONException ex){
+            return -1;
+        }
+    }
+    private float getFloat(JSONObject info, String tag){
+        try{
+            return (float)info.getLong(tag);
+        } catch(JSONException ex){
+            return -1;
+        }
+    }
+    private boolean is_explicit(JSONObject info, String tag){
+        try{
+            return info.getString(tag).equals("explicit");
+        } catch (JSONException ex){
+            return false;
+        }
+    }
+    private int[] int_array(JSONObject info, String tag){
+        try{
+            JSONArray json_arr = info.getJSONArray(tag);
+            int arr[] =  new int[json_arr.length()];
+            for(int i = 0; i < json_arr.length(); i++)
+                arr[i]= json_arr.getInt(i);
+            return arr;
+        } catch(JSONException ex){
+            return new int[0];
+        }
+    }
+    private String[] string_array(JSONObject info, String tag){
+        try{
+            JSONArray json_arr = info.getJSONArray(tag);
+            String arr[] =  new String[json_arr.length()];
+            for(int i = 0; i < json_arr.length(); i++)
+                arr[i]= json_arr.getString(i);
+            return arr;
+        } catch(JSONException ex){
+            return new String[0];
+        }
     }
 }
 
