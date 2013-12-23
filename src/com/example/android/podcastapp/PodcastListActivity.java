@@ -1,13 +1,18 @@
 package com.example.android.podcastapp;
 
 import android.app.ListActivity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 
+import com.example.android.podcastapp.Adapters.SearchResultArrayAdapter;
+
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -18,10 +23,11 @@ import java.io.IOException;
 public class PodcastListActivity extends ListActivity {
     private Podcast results[];
     private ProgressBar progressBar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.resultslist);
+        setContentView(R.layout.results);
         progressBar = (ProgressBar)findViewById(R.id.results_list_progress_bar);
         Bundle bundle = this.getIntent().getExtras();
         parseResults(bundle.getString("result"));
@@ -33,7 +39,6 @@ public class PodcastListActivity extends ListActivity {
             JSONArray arr = json.getJSONArray("results");
             int count = arr.length();
             JSONObject objs[] = new JSONObject[count];
-            Log.d("test","number of results: "+count);
             for(int i = 0; i < count; i++)
                 objs[i] = arr.getJSONObject(i);
             (new CreatePodcastObjs()).execute(objs);
@@ -44,14 +49,25 @@ public class PodcastListActivity extends ListActivity {
 
     private void updateResults(Podcast podcasts[]) {
         this.results = new Podcast[podcasts.length];
-        System.arraycopy(podcasts, 0, this.results, 0, 0);
+        for(int i = 0; i < results.length; i++)
+            this.results[i] = podcasts[i];
+        Log.d("test","Result: "+results[0]);
         SearchResultArrayAdapter adapter = new SearchResultArrayAdapter(this, podcasts);
         setListAdapter(adapter);
+        ListView list = (ListView)findViewById(android.R.id.list);
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Podcast podcast = results[position];
+                Intent intent = new Intent(getBaseContext(), PodcastViewActivity.class);
+                intent.putExtra("podcast",podcast);
+                startActivity(intent);
+            }
+        });
     }
 
     private void setProgressPercent(int percent){
         progressBar.setProgress(percent);
-        Log.d("test","Percent: "+percent);
     }
 
     /**
@@ -86,7 +102,6 @@ public class PodcastListActivity extends ListActivity {
 
         @Override
         protected void onPostExecute(Podcast podcasts[]){
-            Log.d("test","done executing");
             progressBar.setVisibility(ProgressBar.GONE);
             updateResults(podcasts);
         }

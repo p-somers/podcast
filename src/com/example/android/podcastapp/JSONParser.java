@@ -14,14 +14,11 @@
 
 package com.example.android.podcastapp;
 
-import android.util.Log;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 
 public class JSONParser {
 
@@ -53,9 +50,9 @@ public class JSONParser {
         boolean t_exp = is_explicit(info, "trackExplicitness");
         int[] gids = int_array(info,"genreIds");
         String[] genres = string_array(info,"genres");
-        podcast = new Podcast(wt,cid,tid,aname,cname,tname,cname_cens,tname_cens,
-                cvu,furl,turl,a30,a60,a100,a600,cprice,tprice,rdate,c_exp,t_exp,tcount,
-                country,curr,pgenrename,gids,genres);
+        podcast = new Podcast(cid, tid, tcount, gids, cprice, tprice, wt, aname,cname, cname_cens, tname, tname_cens,
+                a30, a60, a100, a600, pgenrename, rdate, country, genres, cvu,furl,turl, curr, c_exp,t_exp
+        );
         return podcast;
     }
     //for gracefully handling exceptions

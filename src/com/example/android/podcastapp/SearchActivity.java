@@ -4,15 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import android.view.Window;
 import android.widget.EditText;
-import android.widget.ListView;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,7 +63,7 @@ public class SearchActivity extends Activity {
     }
 
 
-    // Implementation of AsyncTask used to download XML feed.
+    // Implementation of AsyncTask used to download the JSON object.
     private class DownloadPodcastTask extends AsyncTask<String, Void, Void> {
 
         @Override
@@ -118,9 +111,9 @@ public class SearchActivity extends Activity {
         }
     }
     private void send_results_to_list(){
-        Log.d("test","sending: "+this.result);
         Intent listActivity = new Intent(getBaseContext(), PodcastListActivity.class);
         listActivity.putExtra("result",this.result);
         startActivity(listActivity);
+
     }
 }

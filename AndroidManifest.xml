@@ -56,9 +56,11 @@
         <activity
             android:label="PodcastListActivity"
             android:name=".PodcastListActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@android:style/Theme.Black.NoTitleBar"/>
         <activity
-            android:name=".PodcastViewActiyity"
+            android:name=".PodcastViewActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@android:style/Theme.Black.NoTitleBar"
             />
     </application>

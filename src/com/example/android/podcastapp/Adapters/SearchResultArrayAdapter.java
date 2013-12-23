@@ -1,4 +1,4 @@
-package com.example.android.podcastapp;
+package com.example.android.podcastapp.Adapters;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -11,6 +11,9 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.android.podcastapp.Podcast;
+import com.example.android.podcastapp.R;
+
 /**
  * Created by petersomers on 12/19/13. Based on the tutorial at:
  * www.vogella.com/articles/AndroidListView/article.html
@@ -20,7 +23,7 @@ public class SearchResultArrayAdapter extends ArrayAdapter<Podcast> {
     private final Podcast[] values;
 
     public SearchResultArrayAdapter(Context context, Podcast[] values){
-        super(context,R.layout.search,values);
+        super(context, R.layout.search,values);
         this.context = context;
         this.values = values;
     }
@@ -29,7 +32,7 @@ public class SearchResultArrayAdapter extends ArrayAdapter<Podcast> {
     public View getView(int position, View convertView, ViewGroup parent){
         LayoutInflater inflater = (LayoutInflater)context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View rowView = inflater.inflate(R.layout.resultslist, parent, false);
+        View rowView = inflater.inflate(R.layout.list, parent, false);
         TextView title = (TextView)rowView.findViewById(R.id.result_title);
         TextView description = (TextView)rowView.findViewById(R.id.result_description);
         ImageView icon = (ImageView)rowView.findViewById(R.id.result_icon);
