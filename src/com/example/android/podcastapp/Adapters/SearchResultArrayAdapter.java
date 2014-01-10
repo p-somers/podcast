@@ -3,6 +3,7 @@ package com.example.android.podcastapp.Adapters;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +15,11 @@ import android.widget.TextView;
 import com.example.android.podcastapp.Podcast;
 import com.example.android.podcastapp.R;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 /**
  * Created by petersomers on 12/19/13. Based on the tutorial at:
  * www.vogella.com/articles/AndroidListView/article.html
@@ -21,6 +27,7 @@ import com.example.android.podcastapp.R;
 public class SearchResultArrayAdapter extends ArrayAdapter<Podcast> {
     private final Context context;
     private final Podcast[] values;
+    private ImageView icon;
 
     public SearchResultArrayAdapter(Context context, Podcast[] values){
         super(context, R.layout.search,values);
@@ -33,17 +40,35 @@ public class SearchResultArrayAdapter extends ArrayAdapter<Podcast> {
         LayoutInflater inflater = (LayoutInflater)context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View rowView = inflater.inflate(R.layout.list, parent, false);
+        icon = (ImageView)rowView.findViewById(R.id.result_icon);
+        icon.setTag(values[position].getArtworkUrl("100"));
+        new RetrieveBitmapTask().execute(icon);
         TextView title = (TextView)rowView.findViewById(R.id.result_title);
         TextView description = (TextView)rowView.findViewById(R.id.result_description);
-        ImageView icon = (ImageView)rowView.findViewById(R.id.result_icon);
         title.setText(values[position].getArtistName());
         description.setText(values[position].getCollectionName());
-        try{
-        Bitmap myBitmap = BitmapFactory.decodeFile(values[position].getArtworkPath("100"));
-        icon.setImageBitmap(myBitmap);
-        } catch (Exception ex) {
-            Log.e("test","error setting icon",ex);
-        }
         return rowView;
+    }
+
+    class RetrieveBitmapTask extends AsyncTask<ImageView, Void, Bitmap> {
+        ImageView imageView = null;
+        protected Bitmap doInBackground(ImageView... imageViews) {
+            this.imageView = imageViews[0];
+            try {
+                return BitmapFactory.decodeStream(new URL(imageView.getTag().toString()).openStream());//seriously???
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+        protected void onPostExecute(Bitmap result) {
+            try{
+                imageView.setImageBitmap(result);
+            } catch (Exception ex) {
+                Log.e("test","error setting icon",ex);
+            }
+        }
     }
 }

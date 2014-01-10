@@ -30,7 +30,11 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.ListView;
 import android.widget.Toast;
+
+import com.example.android.podcastapp.Adapters.SubscriptionArrayAdapter;
 
 public class PodcastActivity extends Activity {
     private static Context context;
@@ -50,6 +54,9 @@ public class PodcastActivity extends Activity {
     // The BroadcastReceiver that tracks network connectivity changes.
     private NetworkReceiver receiver;
 
+    private Database db;
+    private Podcast subscriptions[];
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,13 +71,28 @@ public class PodcastActivity extends Activity {
          * adding a handler for catching crashes, for debugging purposes.
          */
         Thread.UncaughtExceptionHandler mUEhandler = new Thread.UncaughtExceptionHandler() {
-            @Override
             public void uncaughtException(Thread thread, Throwable throwable) {
                 Log.d("test",throwable.getMessage());
                 Log.e("test","",throwable);
             }
         };
         Thread.setDefaultUncaughtExceptionHandler(mUEhandler);
+
+        db = new Database(this);
+        this.subscriptions = db.getSubscriptions();
+        if(subscriptions != null){
+            SubscriptionArrayAdapter adapter = new SubscriptionArrayAdapter(this,subscriptions);
+            ListView list = (ListView)findViewById(R.id.subscription_list);
+            list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Podcast podcast = subscriptions[position];
+                    Intent intent = new Intent(PodcastActivity.this, PodcastViewActivity.class);
+                    intent.putExtra("podcast",podcast);
+                    PodcastActivity.this.startActivity(intent);
+                }
+            });
+            list.setAdapter(adapter);
+        }
     }
 
     public void onClick(View view){

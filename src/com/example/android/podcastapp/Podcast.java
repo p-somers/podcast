@@ -2,6 +2,7 @@ package com.example.android.podcastapp;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -16,7 +17,7 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Currency;
-import java.util.Date;
+import java.util.concurrent.ExecutionException;
 
 import static java.lang.System.*;
 
@@ -33,21 +34,25 @@ public class Podcast implements Parcelable {
     private int[] genreIds;
     private float collectionPrice;
     private float trackPrice;
+    private File artwork30File;
+    private File artwork60File;
+    private File artwork100File;
+    private File artwork600File;
     private String wrapperType;
     private String artistName;
     private String collectionName;
     private String collectionCensoredName;
     private String trackName;
     private String trackCensoredName;
-    private String artwork30;
-    private String artwork60;
-    private String artwork100;
-    private String artwork600;
     private String artworkFileExtension;
     private String primaryGenreName;
     private String releaseDate;
     private String[] genres;
     private String country;
+    private URL artwork30Url;
+    private URL artwork60Url;
+    private URL artwork100Url;
+    private URL artwork600Url;
     private URL collectionViewUrl;
     private URL feedUrl;
     private URL trackViewUrl;
@@ -84,19 +89,32 @@ public class Podcast implements Parcelable {
         genres = new String[genres_arr.length];
         arraycopy(genres_arr, 0, genres, 0, genres_arr.length);
         artworkFileExtension = art30.substring(art30.lastIndexOf('.')+1);
-        try {
-            downloadArtworkFromUrl(new URL(art30), "30");
-            downloadArtworkFromUrl(new URL(art60), "60");
-            downloadArtworkFromUrl(new URL(art100), "100");
-            downloadArtworkFromUrl(new URL(art600), "600");
-        }catch(MalformedURLException ex){
-            Log.e("test","artwork url not formed correctly",ex);
-        }
         currency = Currency.getInstance(curr);
         collectionIsExplicit = cexp;
         trackIsExplicit = texp;
+        try{
+            artwork30Url = new URL(art30);
+            artwork60Url = new URL(art60);
+            artwork100Url = new URL(art100);
+            artwork600Url = new URL(art600);
+        }catch(MalformedURLException ex){
+            Log.e("test","artwork url not formed correctly",ex);
+        }
+        artwork30File = new File("");
+        artwork60File = new File("");
+        artwork100File = new File("");
+        artwork600File = new File("");
     }
 
+    /**
+     * This should only be called when the podcast is being subscribed to.
+     */
+    public void downloadAllArtworkToFiles(){
+        downloadArtworkFromUrl(artwork30Url, "30");
+        downloadArtworkFromUrl(artwork60Url, "60");
+        downloadArtworkFromUrl(artwork100Url, "100");
+        downloadArtworkFromUrl(artwork600Url, "600");
+    }
     public Podcast(Parcel parcel) {
         collectionId = parcel.readInt();
         trackId = parcel.readInt();
@@ -110,10 +128,18 @@ public class Podcast implements Parcelable {
         collectionCensoredName = parcel.readString();
         trackName =parcel.readString();
         trackCensoredName = parcel.readString();
-        artwork30 = parcel.readString();
-        artwork60 = parcel.readString();
-        artwork100 = parcel.readString();
-        artwork600 = parcel.readString();
+        artwork30File = new File(parcel.readString());
+        artwork60File = new File(parcel.readString());
+        artwork100File = new File(parcel.readString());
+        artwork600File = new File(parcel.readString());
+        try {
+            artwork30Url = new URL(parcel.readString());
+            artwork60Url = new URL(parcel.readString());
+            artwork100Url = new URL(parcel.readString());
+            artwork600Url = new URL(parcel.readString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
         primaryGenreName = parcel.readString();
         releaseDate = parcel.readString();
         country = parcel.readString();
@@ -135,14 +161,63 @@ public class Podcast implements Parcelable {
     }
     public String getArtworkPath(String dimension){
         try{
-            Field f = this.getClass().getDeclaredField("artwork"+dimension);
-            return f.get(this).toString();
+            Field f = this.getClass().getDeclaredField("artwork"+dimension+"File");
+            return ((File)f.get(this)).getAbsolutePath();
         }catch(NoSuchFieldException ex){
             Log.e("test","No such artwork file",ex);
             return null;
         }catch(IllegalAccessException ex){
             Log.e("test","Illegal access attempt",ex);
             return null;
+        }
+    }
+    public URL getArtworkUrl(String dimension){
+        try{
+            Field f = this.getClass().getDeclaredField("artwork"+dimension+"Url");
+            return (URL)f.get(this);
+        }catch(NoSuchFieldException ex){
+            Log.e("test","No such artwork file",ex);
+            return null;
+        }catch(IllegalAccessException ex){
+            Log.e("test","Illegal access attempt",ex);
+            return null;
+        }catch(Exception ex){
+            Log.e("test","",ex);
+        }
+        return null;
+    }
+
+    /**
+     * This returns a bitmap of the local file if it exists. Otherwise it downloads
+     * a bitmap from the stored url, blocking the main thread.
+     * @param dimension
+     * @return
+     */
+    public Bitmap getBitmap(String dimension){
+        Bitmap bitmap = null;
+        String artworkPath = getArtworkPath(dimension);
+        if(artworkPath.equals("/")){//The artwork hasn't been downloaded. Get it from the URL.
+            URL url = getArtworkUrl(dimension);
+            try {
+                bitmap = new RetrieveBitmapTask().execute(url).get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+        else
+            bitmap = BitmapFactory.decodeFile(artworkPath);
+        return bitmap;
+    }
+    private class RetrieveBitmapTask extends AsyncTask<URL,Void,Bitmap>{
+        public Bitmap doInBackground(URL... urls){
+            try {
+                return BitmapFactory.decodeStream(urls[0].openStream());
+            } catch (IOException e) {
+                Log.e("test","",e);
+                return null;
+            }
         }
     }
 
@@ -153,10 +228,8 @@ public class Podcast implements Parcelable {
      * @param url
      * @param dimension
      */
-    public void downloadArtworkFromUrl(URL url, String dimension) {
+    private void downloadArtworkFromUrl(URL url, String dimension) {
         try {
-            InputStream in = url.openStream();
-            String external = Environment.getExternalStorageDirectory().toString();
             File meta = new File(PodcastActivity.getAppContext().getFilesDir(),"meta");
             meta.mkdirs();
             File dir = new File(meta,artistName.replace(' ','_'));
@@ -168,22 +241,25 @@ public class Podcast implements Parcelable {
                 Log.e("test","Dunno what happened, lol.",ex);
             }
             String filename = "artwork"+dimension+"."+artworkFileExtension;
-            //File imageFile = new File(external,filename);
             File imageFile = new File(dir,filename);
             imageFile.createNewFile();
             FileOutputStream outputStream = new FileOutputStream(imageFile);
-            Bitmap image = BitmapFactory.decodeStream(in);
-            BufferedOutputStream bos = new BufferedOutputStream(outputStream);
-            image.compress(Bitmap.CompressFormat.JPEG, 100, bos);
-            bos.flush();
-            bos.close();
-            in.close();
             try {
-                this.getClass().getDeclaredField("artwork"+dimension).set(this,imageFile.getAbsolutePath());
+                Bitmap image = new RetrieveBitmapTask().execute(url).get();
+                BufferedOutputStream bos = new BufferedOutputStream(outputStream);
+                image.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+                bos.flush();
+                bos.close();
+                in.close();
+                this.getClass().getDeclaredField("artwork"+dimension+"File").set(this,imageFile);
             }catch( NoSuchFieldException ex ){
                 Log.e("test","Error setting path to artwork",ex);
             }catch( IllegalAccessException ex ){
                 Log.e("test","Error accessing variable for path to artwork",ex);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
             }
         } catch ( IOException ex ) {
             Log.e("test","Error opening url for "+dimension+"x"+dimension+" artwork",ex);
@@ -213,6 +289,9 @@ public class Podcast implements Parcelable {
     public String getPrimaryGenreName(){
         return primaryGenreName;
     }
+    public String getReleaseDate(){
+        return releaseDate;
+    }
     public String getCollectionViewUrl(){
         return collectionViewUrl.toString();
     }
@@ -221,6 +300,9 @@ public class Podcast implements Parcelable {
     }
     public String getTrackViewUrl(){
         return trackViewUrl.toString();
+    }
+    public Currency getCurrency(){
+        return currency;
     }
     public int getCollectionId(){
         return collectionId;
@@ -266,12 +348,10 @@ public class Podcast implements Parcelable {
         return s;
     }
 
-    @Override
     public int describeContents() {
         return 0;
     }
 
-    @Override
     public void writeToParcel(Parcel parcel, int flags) {
         parcel.writeInt(collectionId);
         parcel.writeInt(trackId);
@@ -285,10 +365,14 @@ public class Podcast implements Parcelable {
         parcel.writeString(collectionCensoredName);
         parcel.writeString(trackName);
         parcel.writeString(trackCensoredName);
-        parcel.writeString(artwork30);
-        parcel.writeString(artwork60);
-        parcel.writeString(artwork100);
-        parcel.writeString(artwork600);
+        parcel.writeString(artwork30File.getAbsolutePath());
+        parcel.writeString(artwork60File.getAbsolutePath());
+        parcel.writeString(artwork100File.getAbsolutePath());
+        parcel.writeString(artwork600File.getAbsolutePath());
+        parcel.writeString(artwork30Url.toString());
+        parcel.writeString(artwork60Url.toString());
+        parcel.writeString(artwork100Url.toString());
+        parcel.writeString(artwork600Url.toString());
         parcel.writeString(primaryGenreName);
         parcel.writeString(releaseDate);
         parcel.writeString(country);
@@ -302,7 +386,6 @@ public class Podcast implements Parcelable {
     }
     public static final Parcelable.Creator<Podcast> CREATOR
                   = new Parcelable.Creator<Podcast>() {
-        @Override
         public Podcast createFromParcel(Parcel parcel) {
             return new Podcast(parcel);
         }

@@ -51,17 +51,15 @@ public class PodcastListActivity extends ListActivity {
         this.results = new Podcast[podcasts.length];
         for(int i = 0; i < results.length; i++)
             this.results[i] = podcasts[i];
-        Log.d("test","Result: "+results[0]);
         SearchResultArrayAdapter adapter = new SearchResultArrayAdapter(this, podcasts);
         setListAdapter(adapter);
         ListView list = (ListView)findViewById(android.R.id.list);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Podcast podcast = results[position];
-                Intent intent = new Intent(getBaseContext(), PodcastViewActivity.class);
+                Intent intent = new Intent(PodcastListActivity.this, PodcastViewActivity.class);
                 intent.putExtra("podcast",podcast);
-                startActivity(intent);
+                PodcastListActivity.this.startActivity(intent);
             }
         });
     }

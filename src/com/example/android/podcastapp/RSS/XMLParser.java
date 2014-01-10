@@ -11,12 +11,17 @@ import java.net.URL;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import com.example.android.podcastapp.PodcastViewActivity;
 import com.example.android.podcastapp.RSS.RSSHandler;
 
 /**
  * Created by petersomers on 9/2/13.
  */
 public class XMLParser extends AsyncTask<URL, Void, Void> {
+    private PodcastViewActivity activity;
+    public XMLParser(PodcastViewActivity activity){
+        this.activity = activity;
+    }
 
     @Override
     protected Void doInBackground(URL... urls) {
@@ -25,7 +30,7 @@ public class XMLParser extends AsyncTask<URL, Void, Void> {
             SAXParserFactory factory =SAXParserFactory.newInstance();
             SAXParser parser=factory.newSAXParser();
             XMLReader xmlreader=parser.getXMLReader();
-            RSSHandler rh = new RSSHandler();
+            RSSHandler rh = new RSSHandler(activity);
             xmlreader.setContentHandler(rh);
             xmlreader.parse(new InputSource(url.openStream()));
         } catch (Exception e) {
