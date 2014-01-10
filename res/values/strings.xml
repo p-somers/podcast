@@ -36,6 +36,9 @@
     <string name="connection_error">Unable to load content. Check your network connection.</string>
     <string name="json_error">Error parsing JSON.</string>
 
+    <!-- PodcastViewActivity -->
+    <string name="subscribed">Subscribed</string>
+
     <!-- podcast XML items -->
     <string name="wrapperType">Wrapper Type</string>
     <string name="kind">Kind</string>
@@ -69,6 +72,13 @@
     <string name="search_button_text">Search</string>
     <string name="search_result_title">Title</string>
     <string name="search_result_description">Description</string>
+
+    <!-- Episode-loading dialog items -->
+    <string name="loading_episodes_title">Loading episodes...</string>
+
+    <!-- View Episode Items -->
+    <string name="duration">Duration</string>
+    <string name="published">Date published</string>
 
     <string name="subscribe">Subscribe</string>
 

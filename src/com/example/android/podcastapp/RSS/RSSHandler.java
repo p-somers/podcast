@@ -1,11 +1,14 @@
 package com.example.android.podcastapp.RSS;
 
+import android.app.ProgressDialog;
 import android.util.Log;
 
 import com.example.android.podcastapp.Episode;
 import com.example.android.podcastapp.PodcastViewActivity;
+import com.example.android.podcastapp.R;
 
 import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -15,6 +18,8 @@ public class RSSHandler extends DefaultHandler {
     private StringBuffer chars = new StringBuffer();
     private PodcastViewActivity activity;
     private Episode episode;
+    private int maxNumOfEpisodes;
+    private int numEpisodesCounted;
     private final String validStringFields[] = {
             "title","copyright","author",
             "mediaType","fileType","subtitle",
@@ -22,7 +27,9 @@ public class RSSHandler extends DefaultHandler {
     };
     public RSSHandler(PodcastViewActivity activity){
         this.activity = activity;
-        this.episode = new Episode();
+        episode = new Episode();
+        maxNumOfEpisodes = activity.getPodcast().getTrackCount();
+        numEpisodesCounted = 0;
     }
 
     @Override
@@ -33,22 +40,14 @@ public class RSSHandler extends DefaultHandler {
             setEnclosureAttributes(a);
         }
         chars.setLength(0);
-        /*
-        if(a.getLength() > 0){
-            String s ="Attributes for "+lName+":\n";
-            for(int i = 0; i < a.getLength(); i++){
-                s+=a.getLocalName(i)+": "+a.getValue(i)+"\n";
-            }
-            Log.d("test",s);
-        }
-        */
     }
     @Override
-    public void endElement(String uri, String lName, String qName){
-        //if(inItem)
-           // Log.d("test",lName+": "+chars.toString());
-        if(lName.equals("item"))
+    public void endElement(String uri, String lName, String qName) throws SAXException{
+        if(lName.equals("item")){
             activity.addEpisode(episode);
+            if(++numEpisodesCounted == maxNumOfEpisodes)
+                throw new MaxNumOfEpisodesException();
+        }
         else if(isValidStringField(lName))
             episode.setField(lName,chars.toString());
         else if(lName.equals("block"))
@@ -74,9 +73,8 @@ public class RSSHandler extends DefaultHandler {
         episode.setUrl(attributes.getValue("url"));
         episode.setType(attributes.getValue("type"));
         try{
-        episode.setLength(Float.parseFloat(attributes.getValue("length")));
+            episode.setLength(Float.parseFloat(attributes.getValue("length")));
         }catch(NumberFormatException e){
-            //ignore
         }
     }
     @Override
@@ -88,5 +86,14 @@ public class RSSHandler extends DefaultHandler {
         synchronized (activity){
             activity.notifyAll();
         }
+    }
+
+    /**
+     * Sometimes the xml documents have more episodes than are listed in the itunes store, as
+     * specified by the podcast's trackCount. Thus, to end early, we throw a special exception
+     * to end the processing. Crummy, I know, but it works.
+     */
+    public class MaxNumOfEpisodesException extends SAXException {
+        //Note: NOT actually indicative of an error.
     }
 }

@@ -15,12 +15,12 @@ import java.util.ArrayList;
 /**
  * Created by petersomers on 12/22/13.
  */
-public class EpisodeArrayApadter extends ArrayAdapter<Episode> {
+public class EpisodeArrayAdapter extends ArrayAdapter<Episode> {
 
     private final Context context;
     private final ArrayList<Episode> values;
 
-    public EpisodeArrayApadter(Context context, ArrayList<Episode> values){
+    public EpisodeArrayAdapter(Context context, ArrayList<Episode> values){
         super(context, R.layout.search,values);
         this.context = context;
         this.values = values;

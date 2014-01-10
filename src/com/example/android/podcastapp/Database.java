@@ -73,6 +73,7 @@ public class Database extends SQLiteOpenHelper {
     private boolean collectionIsExplicit;
     private boolean trackIsExplicit;
      */
+    private static Context context;
 
     private static final String SUBSCRIPTION_DATABASE_CREATE = "create table "
             + TABLE_SUBSCRIPTIONS + "("
@@ -137,6 +138,7 @@ public class Database extends SQLiteOpenHelper {
 
     public Database(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        this.context = context;
     }
 
     @Override
@@ -210,8 +212,8 @@ public class Database extends SQLiteOpenHelper {
 
     public boolean isSubscribedTo(Podcast podcast){
         SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.query(TABLE_SUBSCRIPTIONS,null,
-                COLUMN_COLLECTION_ID+"="+podcast.getCollectionId(),null,null,null,null);
+        Cursor cursor = db.query(TABLE_SUBSCRIPTIONS, null,
+                COLUMN_COLLECTION_ID + "=" + podcast.getCollectionId(), null, null, null, null);
         boolean tf = cursor.getCount() > 0;
         cursor.close();
         return tf;
@@ -272,7 +274,7 @@ public class Database extends SQLiteOpenHelper {
         String genres[] = cursor.getString(cursor.getColumnIndex(COLUMN_GENRES)).split(",");
         return new Podcast(cid, tid, tcount, genre_ids, cprice, tprice, wt, aname,cname, cname_cens,
                 tname, tname_cens, a30, a60, a100, a600, pgenrename, rdate, country, genres, cvu,
-                furl,turl, curr, c_exp,t_exp);
+                furl,turl, curr, c_exp,t_exp, context);
     }
 
     //From: http://www.androidhive.info/2013/09/android-sqlite-database-with-multiple-tables/
@@ -280,20 +282,5 @@ public class Database extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         if(db != null && db.isOpen())
             db.close();
-    }
-
-    public void print_all_subscriptions(){
-        Log.d("test","printing subscriptions");
-        SQLiteDatabase db = this.getWritableDatabase();
-        Cursor cursor = db.query(TABLE_SUBSCRIPTIONS,null,null,null,null,null,null);
-        if(cursor.moveToFirst()){
-            String name = cursor.getString(cursor.getColumnIndex(COLUMN_ARTIST_NAME));
-            Log.d("test","Name: "+name);
-            String filepath = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_100_PATH));
-            String url = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_100_URL));
-            Log.d("test","filepath: "+filepath);
-            Log.d("test","url: "+url);
-        }
-        cursor.close();
     }
 }

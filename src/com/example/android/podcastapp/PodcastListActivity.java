@@ -82,7 +82,7 @@ public class PodcastListActivity extends ListActivity {
             Podcast podcasts[] = new Podcast[count];
             for(int i = 0; i < count; i++){
                 try{
-                    podcasts[i] = podcastParser.toPodcastObj(jsonObjects[i]);
+                    podcasts[i] = podcastParser.toPodcastObj(jsonObjects[i],getBaseContext());
                 } catch(IOException ex) {
                     Log.e("test","",ex);
                 } finally {

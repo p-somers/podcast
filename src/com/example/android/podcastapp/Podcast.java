@@ -1,5 +1,6 @@
 package com.example.android.podcastapp;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -59,10 +60,11 @@ public class Podcast implements Parcelable {
     private Currency currency;
     private boolean collectionIsExplicit;
     private boolean trackIsExplicit;
+    private Context context;
 
     public Podcast(int c_id, int t_id, int tcount, int[] gids, float cprice, float tprice, String wt, String aname, String cname, String cname_cens, String tname,
                    String tname_cens, String art30, String art60, String art100, String art600, String pgenre, String rdate, String c, String[] genres_arr, String cvUrl, String fUrl, String tvUrl,
-                   String curr, boolean cexp, boolean texp){
+                   String curr, boolean cexp, boolean texp, Context context){
         collectionId = c_id;
         trackId = t_id;
         trackCount = tcount;
@@ -104,6 +106,7 @@ public class Podcast implements Parcelable {
         artwork60File = new File("");
         artwork100File = new File("");
         artwork600File = new File("");
+        this.context = context;
     }
 
     /**
@@ -200,10 +203,16 @@ public class Podcast implements Parcelable {
             URL url = getArtworkUrl(dimension);
             try {
                 bitmap = new RetrieveBitmapTask().execute(url).get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            } catch (Exception ex) {
+                Log.e("test","",ex);
+                int id = R.drawable.default_artwork30;
+                if(dimension.equals("60"))
+                    id = R.drawable.default_artwork60;
+                else if(dimension.equals("100"))
+                    id = R.drawable.default_artwork100;
+                else if(dimension.equals("600"))
+                    id = R.drawable.default_artwork600;
+                bitmap = BitmapFactory.decodeResource(context.getResources(), id);
             }
         }
         else

@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Comparator;
 import java.util.Date;
 
 /**
@@ -79,7 +80,10 @@ public class Episode {
                     seconds = Integer.parseInt(duration);
                 } catch(NumberFormatException e){
                     Log.e("test","Error parsing duration");
-                } break;
+                }
+                minutes = 0;
+                hours = 0;
+                break;
             case 2:
                 try{
                     seconds = Integer.parseInt(vals[1]);
@@ -90,7 +94,9 @@ public class Episode {
                     minutes = Integer.parseInt(vals[0]);
                 } catch(NumberFormatException e){
                     Log.e("test","error parsing minutes of duration");
-                } break;
+                }
+                hours = 0;
+                break;
             case 3:
                 try{
                     seconds = Integer.parseInt(vals[2]);
@@ -103,7 +109,7 @@ public class Episode {
                     Log.e("test","error parsing minutes of duration");
                 }
                 try{
-                    hours = Integer.parseInt(vals[2]);
+                    hours = Integer.parseInt(vals[0]);
                 } catch(NumberFormatException e){
                     Log.e("test","error parsing hours of duration");
                 }
@@ -142,7 +148,6 @@ public class Episode {
             if(guid.length()>0)
                 this.guid = new URL(guid);
         } catch (MalformedURLException e) {
-            Log.e("test","",e);
         }
     }
     public void setUrl(URL url){

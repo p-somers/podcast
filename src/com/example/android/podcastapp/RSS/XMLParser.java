@@ -12,14 +12,13 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import com.example.android.podcastapp.PodcastViewActivity;
-import com.example.android.podcastapp.RSS.RSSHandler;
 
 /**
  * Created by petersomers on 9/2/13.
  */
 public class XMLParser extends AsyncTask<URL, Void, Void> {
     private PodcastViewActivity activity;
-    public XMLParser(PodcastViewActivity activity){
+    public XMLParser(PodcastViewActivity activity, boolean showProgressDialog){
         this.activity = activity;
     }
 
@@ -33,9 +32,15 @@ public class XMLParser extends AsyncTask<URL, Void, Void> {
             RSSHandler rh = new RSSHandler(activity);
             xmlreader.setContentHandler(rh);
             xmlreader.parse(new InputSource(url.openStream()));
+        } catch ( RSSHandler.MaxNumOfEpisodesException ex) {//ignore
         } catch (Exception e) {
             Log.e("test","",e);
         }
         return null;
+    }
+
+    @Override
+    protected void onPostExecute(Void v){
+        activity.onEpisodeParsingDone();
     }
 }
