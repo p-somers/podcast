@@ -30,6 +30,7 @@ public class XMLParser extends AsyncTask<URL, Void, Void> {
             SAXParser parser=factory.newSAXParser();
             XMLReader xmlreader=parser.getXMLReader();
             RSSHandler rh = new RSSHandler(activity);
+            rh.setMaxNumOfEpisodes(PodcastViewActivity.MAX_EPISODES_LOADED);
             xmlreader.setContentHandler(rh);
             xmlreader.parse(new InputSource(url.openStream()));
         } catch ( RSSHandler.MaxNumOfEpisodesException ex) {//ignore

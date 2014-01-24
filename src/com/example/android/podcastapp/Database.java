@@ -65,6 +65,8 @@ public class Database extends SQLiteOpenHelper {
     public static final String COLUMN_LINK    = "link";
     public static final String COLUMN_URL     = "url";
     public static final String COLUMN_PUBDATE = "pubDate";
+    public static final String COLUMN_LOCAL_FILE = "localFile";
+    public static final String COLUMN_PLAYBACK_POSITION = "playback_position";
 
     private static final String DATABASE_NAME = "subscriptions.db";
     private static final int DATABASE_VERSION = 1;
@@ -77,8 +79,8 @@ public class Database extends SQLiteOpenHelper {
 
     private static final String SUBSCRIPTION_DATABASE_CREATE = "create table "
             + TABLE_SUBSCRIPTIONS + "("
-            + COLUMN_ID + " integer primary key autoincrement, "
-            + COLUMN_COLLECTION_ID + " integer, "
+            + COLUMN_ID + " integer primary key, "
+            //+ COLUMN_COLLECTION_ID + " integer, "
             + COLUMN_TRACK_ID + " integer, "
             + COLUMN_TRACK_COUNT + " integer, "
             + COLUMN_GENRE_IDS + " text, "
@@ -133,7 +135,9 @@ public class Database extends SQLiteOpenHelper {
             + COLUMN_GUID + " text, "
             + COLUMN_LINK + " text, "
             + COLUMN_URL + " text, "
-            + COLUMN_PUBDATE + " text"
+            + COLUMN_PUBDATE + " text, "
+            + COLUMN_LOCAL_FILE + " text, "
+            + COLUMN_PLAYBACK_POSITION + " integer default 0"
             + ");";
 
     public Database(Context context) {
@@ -158,7 +162,7 @@ public class Database extends SQLiteOpenHelper {
     public long subscribeTo(Podcast podcast) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(COLUMN_COLLECTION_ID,podcast.getCollectionId());
+        values.put(COLUMN_ID,podcast.getCollectionId());
         values.put(COLUMN_TRACK_ID,podcast.getTrackId());
         values.put(COLUMN_TRACK_COUNT,podcast.getTrackCount());
         String genre_ids_string = "";
@@ -213,7 +217,7 @@ public class Database extends SQLiteOpenHelper {
     public boolean isSubscribedTo(Podcast podcast){
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.query(TABLE_SUBSCRIPTIONS, null,
-                COLUMN_COLLECTION_ID + "=" + podcast.getCollectionId(), null, null, null, null);
+                COLUMN_ID + "=" + podcast.getCollectionId(), null, null, null, null);
         boolean tf = cursor.getCount() > 0;
         cursor.close();
         return tf;
@@ -221,20 +225,20 @@ public class Database extends SQLiteOpenHelper {
 
     public Podcast[] getSubscriptions(){
         Podcast podcasts[] = null;
-        SQLiteDatabase db = this.getWritableDatabase();
+        SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_SUBSCRIPTIONS,null,null,null,null,null,null);
         if(cursor.moveToFirst()){
             podcasts = new Podcast[cursor.getCount()];
             for(int i = 0; i < cursor.getCount(); i++){
-                podcasts[i] = fromCursor(cursor);
+                podcasts[i] = podcastFromCursor(cursor);
                 cursor.moveToNext();
             }
         }
         return podcasts;
     }
 
-    private Podcast fromCursor(Cursor cursor){
-        int cid = cursor.getInt(cursor.getColumnIndex(COLUMN_COLLECTION_ID));
+    private Podcast podcastFromCursor(Cursor cursor){
+        int cid = cursor.getInt(cursor.getColumnIndex(COLUMN_ID));
         int tid = cursor.getInt(cursor.getColumnIndex(COLUMN_TRACK_ID));
         int tcount = cursor.getInt(cursor.getColumnIndex(COLUMN_TRACK_COUNT));
         float cprice = cursor.getFloat(cursor.getColumnIndex(COLUMN_COLLECTION_PRICE));
@@ -275,6 +279,95 @@ public class Database extends SQLiteOpenHelper {
         return new Podcast(cid, tid, tcount, genre_ids, cprice, tprice, wt, aname,cname, cname_cens,
                 tname, tname_cens, a30, a60, a100, a600, pgenrename, rdate, country, genres, cvu,
                 furl,turl, curr, c_exp,t_exp, context);
+    }
+
+    public long addEpisode(Episode episode){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        values.put(COLUMN_PARENT_ID,episode.getParent().getCollectionId());
+        values.put(COLUMN_TITLE,episode.getTitle());
+        values.put(COLUMN_COPYRIGHT,episode.getCopyright());
+        values.put(COLUMN_AUTHOR,episode.getAuthor());
+        values.put(COLUMN_MEDIATYPE,episode.getMediaType());
+        values.put(COLUMN_SUBTITLE,episode.getSubtitle());
+        values.put(COLUMN_SUMMARY,episode.getSummary());
+        values.put(COLUMN_EXPLICIT,episode.getExplicitness());
+        values.put(COLUMN_BLOCKED,episode.isBlocked());
+        values.put(COLUMN_ISCLOSEDCAPTIONED,episode.isClosedCaptioned());
+        values.put(COLUMN_HOURS,episode.getHours());
+        values.put(COLUMN_MINUTES,episode.getMinutes());
+        values.put(COLUMN_SECONDS,episode.getSeconds());
+        values.put(COLUMN_LENGTH,episode.getLength());
+        try{
+            values.put(COLUMN_GUID,episode.getGuid().toString());
+        }catch (Exception ex){
+            values.put(COLUMN_GUID,"");
+        }
+        try{
+            values.put(COLUMN_LINK,episode.getLink().toString());
+        }catch(Exception ex){
+        }
+        try{
+            values.put(COLUMN_URL,episode.getUrl().toString());
+        }catch(Exception ex){
+            values.put(COLUMN_URL,"");
+        }
+        try{
+            values.put(COLUMN_PUBDATE,episode.getPubDate().toString());
+        }catch(Exception ex){
+            values.put(COLUMN_PUBDATE,"");
+        }
+        try{
+            values.put(COLUMN_LOCAL_FILE,episode.getLocalFile().getAbsolutePath());
+        }catch(Exception ex){
+            values.put(COLUMN_LOCAL_FILE,"");
+        }
+        // insert row
+        long episode_id = db.insert(TABLE_EPISODES, null, values);
+
+        return episode_id;
+    }
+
+    public Episode[] getEpisodes(Podcast podcast){
+        Episode episodes[] = null;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_EPISODES,null,COLUMN_PARENT_ID+"="+podcast.getCollectionId(),null,null,null,null);
+        if(cursor.moveToFirst()){
+            episodes = new Episode[cursor.getCount()];
+            for(int i = 0; i < cursor.getCount(); i++){
+                episodes[i] = episodeFromCursor(cursor, podcast);
+                episodes[i].setParent(podcast);
+                cursor.moveToNext();
+            }
+        }
+        return episodes;
+    }
+
+    private Episode episodeFromCursor(Cursor cursor, Podcast parent){
+        Episode episode = new Episode();
+        episode.setParent(parent);
+        episode.setField("title",cursor.getString(cursor.getColumnIndex(COLUMN_TITLE)));
+        episode.setField("copyright",cursor.getString(cursor.getColumnIndex(COLUMN_COPYRIGHT)));
+        episode.setField("author",cursor.getString(cursor.getColumnIndex(COLUMN_AUTHOR)));
+        episode.setField("mediaType",cursor.getString(cursor.getColumnIndex(COLUMN_MEDIATYPE)));
+        episode.setField("fileType",cursor.getString(cursor.getColumnIndex(COLUMN_FILETYPE)));
+        episode.setField("subtitle",cursor.getString(cursor.getColumnIndex(COLUMN_SUBTITLE)));
+        episode.setField("summary",cursor.getString(cursor.getColumnIndex(COLUMN_SUMMARY)));
+        episode.setField("explicit",cursor.getString(cursor.getColumnIndex(COLUMN_EXPLICIT)));
+        episode.setField("blocked",cursor.getInt(cursor.getColumnIndex(COLUMN_BLOCKED))>0);
+        episode.setField("isClosedCaptioned",cursor.getInt(cursor.getColumnIndex(COLUMN_ISCLOSEDCAPTIONED))>0);
+        episode.setField("hours",cursor.getInt(cursor.getColumnIndex(COLUMN_HOURS)));
+        episode.setField("minutes",cursor.getInt(cursor.getColumnIndex(COLUMN_MINUTES)));
+        episode.setField("seconds",cursor.getInt(cursor.getColumnIndex(COLUMN_SECONDS)));
+        episode.setField("length",cursor.getInt(cursor.getColumnIndex(COLUMN_LENGTH)));
+        episode.setGuid(cursor.getString(cursor.getColumnIndex(COLUMN_GUID)));
+        episode.setLink(cursor.getString(cursor.getColumnIndex(COLUMN_LINK)));
+        episode.setUrl(cursor.getString(cursor.getColumnIndex(COLUMN_URL)));
+        episode.setPubDate(cursor.getString(cursor.getColumnIndex(COLUMN_PUBDATE)));
+        episode.setLocalFile(cursor.getString(cursor.getColumnIndex(COLUMN_LOCAL_FILE)));
+        episode.setPlaybackPosition(cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYBACK_POSITION)));
+        return episode;
     }
 
     //From: http://www.androidhive.info/2013/09/android-sqlite-database-with-multiple-tables/

@@ -31,6 +31,9 @@ public class RSSHandler extends DefaultHandler {
         maxNumOfEpisodes = activity.getPodcast().getTrackCount();
         numEpisodesCounted = 0;
     }
+    public void setMaxNumOfEpisodes(int maxNumOfEpisodes){
+        this.maxNumOfEpisodes = maxNumOfEpisodes;
+    }
 
     @Override
     public void startElement(String uri, String lName, String qName, Attributes a){

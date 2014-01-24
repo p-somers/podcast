@@ -79,7 +79,11 @@
     <!-- View Episode Items -->
     <string name="duration">Duration</string>
     <string name="published">Date published</string>
-
     <string name="subscribe">Subscribe</string>
+
+    <!-- Episode List Items -->
+    <color name="download_background_color">#1C20FC</color>
+    <color name="download_text_color">#FFFFFF</color>
+    <color name="downloaded_text_color">#1AFF00</color>
 
 </resources>

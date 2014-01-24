@@ -1,10 +1,12 @@
 package com.example.android.podcastapp.Adapters;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.android.podcastapp.Episode;
@@ -30,11 +32,14 @@ public class EpisodeArrayAdapter extends ArrayAdapter<Episode> {
     public View getView(int position, View convertView, ViewGroup parent){
         LayoutInflater inflater = (LayoutInflater)context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View rowView = inflater.inflate(R.layout.list, parent, false);
-        TextView title = (TextView)rowView.findViewById(R.id.result_title);
+        View rowView = inflater.inflate(R.layout.episode_list, parent, false);
+        TextView title = (TextView)rowView.findViewById(R.id.title);
         Episode episode = values.get(position);
         title.setText(episode.getTitle());
-
+        if(episode.isDownloaded()){
+            int color = context.getResources().getColor(R.color.downloaded_text_color);
+            title.setTextColor(color);
+        }
         return rowView;
     }
 }

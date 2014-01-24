@@ -3,6 +3,7 @@ package com.example.android.podcastapp;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,14 +12,17 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.android.podcastapp.Adapters.EpisodeArrayAdapter;
 import com.example.android.podcastapp.RSS.XMLParser;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 
 /**
@@ -28,12 +32,14 @@ public class PodcastViewActivity extends Activity {
     private Podcast podcast;
     private ListView list;
     private ArrayList<Episode> episodes;
+    private List<Episode> downloaded_episodes;
     private EpisodeArrayAdapter adapter;
     private Database database;
     private Button button;
     private XMLParser parser;
     private ProgressDialog progressDialog;
     private int numEpisodesProcessed;
+    public static final int MAX_EPISODES_LOADED = 20;
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -52,11 +58,17 @@ public class PodcastViewActivity extends Activity {
         if(database.isSubscribedTo(podcast)){
             button.setText("Subscribed");
             button.setEnabled(false);
+            Episode episodes[] = database.getEpisodes(podcast);
+            if(episodes != null && episodes.length>0)
+                downloaded_episodes = Arrays.asList(episodes);
         }
 
         progressDialog = new ProgressDialog(this);
         progressDialog.setTitle(R.string.loading_episodes_title);
-        progressDialog.setMax(podcast.getTrackCount());
+        if(podcast.getTrackCount() < MAX_EPISODES_LOADED)
+            progressDialog.setMax(podcast.getTrackCount());
+        else
+            progressDialog.setMax(MAX_EPISODES_LOADED);
         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         progressDialog.show();
         numEpisodesProcessed = 0;
@@ -66,14 +78,14 @@ public class PodcastViewActivity extends Activity {
 
 
         parser = new XMLParser(this,true);
-        parser.execute(podcast.getFeedUrl());
+        parser.execute(podcast.getFeedUrl());/*
         try {
             synchronized (parser){
                 parser.wait(5000);
             }
         } catch (InterruptedException e) {
             Log.e("test","",e);
-        }
+        }*/
     }
 
     private void subscribe() {
@@ -86,6 +98,12 @@ public class PodcastViewActivity extends Activity {
 
     public void addEpisode(Episode episode){
         progressDialog.setProgress(numEpisodesProcessed++);
+        episode.setParent(podcast);
+        if(downloaded_episodes != null && downloaded_episodes.contains(episode)){
+            int episode_index = downloaded_episodes.indexOf(episode);
+            Episode downloaded = downloaded_episodes.get(episode_index);
+            episode.setLocalFile(downloaded.getLocalFile());
+        }
         episodes.add(episode);
     }
 
@@ -94,14 +112,31 @@ public class PodcastViewActivity extends Activity {
     }
 
     public void onEpisodeParsingDone(){
+        //for(Episode episode: episodes)
+          //  Log.d("test","episode: "+episode.getTitle());
         Collections.sort(episodes,new EpisodeComparator());
         adapter = new EpisodeArrayAdapter(this,episodes);
         list = (ListView)findViewById(R.id.episodeList);
         list.setAdapter(adapter);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                try{
                 Episode episode = episodes.get(position);
-
+                if(!episode.isDownloaded()){
+                    episode.download(view);
+                } else {
+                    Intent intent = new Intent(PodcastViewActivity.this, MediaPlayerActivity.class);
+                    intent.putExtra("episode",episode);
+                    PodcastViewActivity.this.startActivity(intent);
+                }
+                }catch(Exception e){
+                    Log.e("test","",e);
+                }
+            }
+        });
+        list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long l) {
+                Episode episode = episodes.get(position);
                 final Dialog dialog = new Dialog(PodcastViewActivity.this);
                 dialog.setContentView(R.layout.episode_view);
                 dialog.setTitle(episode.getTitle());
@@ -120,6 +155,7 @@ public class PodcastViewActivity extends Activity {
                     }
                 });
                 dialog.show();
+                return true;
             }
         });
         if(progressDialog != null)

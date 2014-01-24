@@ -2,9 +2,23 @@
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent">
+
     <TextView
         android:id="@+id/title"
+        android:layout_gravity="center_vertical"
         android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_margin="10px"
+        android:padding="8px"
+        android:textColor="@color/download_text_color"
+        android:textSize="14sp"
         android:text="Title"/>
+    <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:id="@+id/episode_download_progress_bar"
+        android:indeterminate="true"
+        android:layout_alignBottom="@id/title"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
 </RelativeLayout>
