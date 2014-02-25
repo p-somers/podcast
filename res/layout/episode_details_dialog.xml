@@ -18,7 +18,8 @@
         android:id="@+id/episode_summary"
         android:layout_below="@id/episode_duration"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:padding="20dp"/>
     <Button
         android:id="@+id/episode_view_dialog_button_ok"
         android:layout_below="@id/episode_summary"
