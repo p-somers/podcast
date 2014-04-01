@@ -37,7 +37,14 @@
     <string name="json_error">Error parsing JSON.</string>
 
     <!-- PodcastViewActivity -->
-    <string name="subscribed">Subscribed</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="unsubscribe">Unsubscribe</string>
+    <string-array name="display_options">
+        <item>All unplayed</item>
+        <item>Downloaded</item>
+        <item>Finished</item>
+        <item>All</item>
+    </string-array>
 
     <!-- podcast XML items -->
     <string name="wrapperType">Wrapper Type</string>
@@ -79,11 +86,19 @@
     <!-- View Episode Items -->
     <string name="duration">Duration</string>
     <string name="published">Date published</string>
-    <string name="subscribe">Subscribe</string>
+    <string name="show_finished_episodes">Show finished episodes</string>
+    <string name="hide_finished_episodes">Hide finished episodes</string>
 
     <!-- Episode List Items -->
     <color name="download_background_color">#1C20FC</color>
     <color name="download_text_color">#FFFFFF</color>
-    <color name="downloaded_text_color">#1AFF00</color>
+    <color name="finished_text_color">#1AFF00</color>
+    <color name="downloaded_text_color">#33CCCC</color>
+    <string name="episode_finished">Episode already finished</string>
+
+    <!-- MediaPlayer Items -->
+    <!-- useful note on alpha values: http://stackoverflow.com/a/16890937/1955559 -->
+    <color name="player_summary_background">#99000000</color>
+    <string name="player_text_padding">20dp</string>
 
 </resources>

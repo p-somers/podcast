@@ -15,6 +15,7 @@
 package com.example.android.podcastapp;
 
 import android.content.Context;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,8 +24,10 @@ import org.json.JSONObject;
 import java.io.IOException;
 
 public class JSONParser {
+    private static final String TAG = PodcastActivity.class.getName();
 
     public Podcast toPodcastObj(JSONObject info, Context context) throws IOException {
+        //printAllItems(info);
         Podcast podcast = null;
         int cid = getInt(info,"collectionId");
         int tid = getInt(info,"trackId");
@@ -106,6 +109,18 @@ public class JSONParser {
             return arr;
         } catch(JSONException ex){
             return new String[0];
+        }
+    }
+
+    //for debugging
+    private void printAllItems(JSONObject obj){
+        JSONArray names = obj.names();
+        for(int i = 0; i < names.length(); i++){
+            try {
+                String name = names.getString(i);
+                Log.d(TAG,"Name: "+name+", value: "+obj.get(name).toString());
+            } catch (JSONException e) {
+            }
         }
     }
 }

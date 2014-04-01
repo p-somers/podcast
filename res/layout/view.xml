@@ -4,29 +4,39 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
+    <TextView
+        android:id="@+id/artistName"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Artist Name"/>
     <RelativeLayout
         android:id="@+id/description_layout"
+        android:layout_below="@id/artistName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-        <ImageView
-            android:id="@+id/artwork"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
         <Button
             android:id="@+id/subscribe_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignLeft="@id/artwork"
             android:onClick="onClick"
             android:text="@string/subscribe"/>
-        <TextView
-            android:id="@+id/artistName"
-            android:layout_below="@id/artwork"
+        <Spinner
+            android:id="@+id/display_options"
+            android:layout_alignParentRight="true"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Artist Name"/>
+            android:layout_toRightOf="@+id/subscribe_button"/>
     </RelativeLayout>
+    <ImageView
+        android:id="@+id/artwork"
+        android:layout_below="@id/description_layout"
+        android:layout_centerHorizontal="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
     <ListView
+        android:background="@color/player_summary_background"
+        android:cacheColorHint="@android:color/transparent"
         android:id="@+id/episodeList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

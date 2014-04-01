@@ -25,10 +25,9 @@ import static java.lang.System.*;
 /**
  * Created by petersomers on 8/29/13.
  */
-/*
-"genreIds":["1301", "26"], "genres":["Arts", "Podcasts"]}
- */
 public class Podcast implements Parcelable {
+    private static final String TAG = PodcastActivity.class.getName();
+
     private int collectionId;
     private int trackId;
     private int trackCount;
@@ -196,6 +195,14 @@ public class Podcast implements Parcelable {
      * @param dimension
      * @return
      */
+    public void setArtworkFile(int dimension, String path){
+        switch(dimension){
+            case 30:  artwork30File  = new File(path); break;
+            case 60:  artwork60File  = new File(path); break;
+            case 100: artwork100File = new File(path); break;
+            case 600: artwork600File = new File(path); break;
+        }
+    }
     public Bitmap getBitmap(String dimension){
         Bitmap bitmap = null;
         String artworkPath = getArtworkPath(dimension);

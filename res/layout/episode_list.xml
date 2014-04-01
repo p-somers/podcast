@@ -4,7 +4,7 @@
     android:layout_width="match_parent" android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/title"
+        android:id="@+id/list_item_title"
         android:layout_gravity="center_vertical"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
@@ -13,11 +13,16 @@
         android:textColor="@color/download_text_color"
         android:textSize="14sp"
         android:text="Title"/>
+    <TextView
+        android:id="@+id/list_item_duration"
+        android:layout_alignParentRight="true"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent" />
     <ProgressBar
         style="?android:attr/progressBarStyleHorizontal"
         android:id="@+id/episode_download_progress_bar"
         android:indeterminate="true"
-        android:layout_alignBottom="@id/title"
+        android:layout_alignBottom="@id/list_item_title"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"/>

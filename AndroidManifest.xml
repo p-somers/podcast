@@ -34,7 +34,6 @@
 
         <activity
             android:name=".PodcastActivity"
-            android:label="@string/app_name"
             android:theme="@android:style/Theme.Black.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -67,7 +66,9 @@
         <activity
             android:name=".MediaPlayerActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Black.NoTitleBar"
             />
+
     </application>
 </manifest>

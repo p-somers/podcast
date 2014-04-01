@@ -26,4 +26,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Ok" />
+    <Button
+        android:id="@+id/episode_view_delete_episode"
+        android:layout_below="@id/episode_view_dialog_button_ok"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Delete Episode (Hold Button)"
+        />
 </RelativeLayout>

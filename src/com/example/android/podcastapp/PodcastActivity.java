@@ -15,6 +15,7 @@
 package com.example.android.podcastapp;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -31,12 +32,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.android.podcastapp.Adapters.SubscriptionArrayAdapter;
 
 public class PodcastActivity extends Activity {
+    private static final String TAG = PodcastActivity.class.getName();
     private static Context context;
     public static final String WIFI = "Wi-Fi";
     public static final String ANY = "Any";
@@ -72,27 +76,12 @@ public class PodcastActivity extends Activity {
          */
         Thread.UncaughtExceptionHandler mUEhandler = new Thread.UncaughtExceptionHandler() {
             public void uncaughtException(Thread thread, Throwable throwable) {
-                Log.d("test",throwable.getMessage());
-                Log.e("test","",throwable);
+                Log.e(TAG,"",throwable);
             }
         };
         Thread.setDefaultUncaughtExceptionHandler(mUEhandler);
 
         db = new Database(this);
-        this.subscriptions = db.getSubscriptions();
-        if(subscriptions != null){
-            SubscriptionArrayAdapter adapter = new SubscriptionArrayAdapter(this,subscriptions);
-            ListView list = (ListView)findViewById(R.id.subscription_list);
-            list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    Podcast podcast = subscriptions[position];
-                    Intent intent = new Intent(PodcastActivity.this, PodcastViewActivity.class);
-                    intent.putExtra("podcast",podcast);
-                    PodcastActivity.this.startActivity(intent);
-                }
-            });
-            list.setAdapter(adapter);
-        }
     }
 
     public void onClick(View view){
@@ -109,6 +98,7 @@ public class PodcastActivity extends Activity {
     @Override
     public void onStart() {
         super.onStart();
+        loadSubscriptions();
 
         // Gets the user's network preference settings
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -131,6 +121,54 @@ public class PodcastActivity extends Activity {
         return context;
     }
 
+    private void loadSubscriptions(){
+        this.subscriptions = db.getSubscriptions();
+        if(subscriptions != null){
+            SubscriptionArrayAdapter adapter = new SubscriptionArrayAdapter(this,subscriptions);
+            ListView list = (ListView)findViewById(R.id.subscription_list);
+            list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Podcast podcast = subscriptions[position];
+                    Intent intent = new Intent(PodcastActivity.this, PodcastViewActivity.class);
+                    intent.putExtra("podcast",podcast);
+                    PodcastActivity.this.startActivity(intent);
+                }
+            });
+            list.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long l) {
+                    return PodcastActivity.this.onItemLongClick(parent, view, position, l);
+                }
+            });
+            list.setAdapter(adapter);
+        }
+    }
+    private boolean onItemLongClick(AdapterView<?> parent, View view, int position, long l) {
+        Podcast podcast = subscriptions[position];
+        final Dialog dialog = new Dialog(PodcastActivity.this);
+        /*
+        Episode episode = episodes_arraylist.get(position);
+        final Dialog dialog = new Dialog(PodcastViewActivity.this);
+        dialog.setContentView(R.layout.episode_view);
+        dialog.setTitle(episode.getTitle());
+
+        TextView summary = (TextView)dialog.findViewById(R.id.episode_summary);
+        TextView duration = (TextView)dialog.findViewById(R.id.episode_duration);
+        TextView pubDate = (TextView)dialog.findViewById(R.id.episode_pubdate);
+        summary.setText(episode.getSummary());
+        duration.setText(episode.getDuration());
+        pubDate.setText(episode.getPubDate().toString());
+
+        Button button = (Button)dialog.findViewById(R.id.episode_view_dialog_button_ok);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
+        */
+        return true;
+    }
+
     // Checks the network connection and sets the wifiConnected and mobileConnected
     // variables accordingly.
     private void updateConnectedFlags() {
@@ -145,6 +183,10 @@ public class PodcastActivity extends Activity {
             wifiConnected = false;
             mobileConnected = false;
         }
+    }
+
+    public static boolean internetConnected(){
+        return wifiConnected || mobileConnected;
     }
 
     // Populates the activity's options menu.

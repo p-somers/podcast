@@ -27,6 +27,9 @@ import java.util.Date;
  * Created by petersomers on 12/22/13.
  */
 public class Episode implements Parcelable {
+    private static final String TAG = PodcastActivity.class.getName();
+
+    private Context context;
     private String title;
     private String copyright;
     private String author;
@@ -37,14 +40,17 @@ public class Episode implements Parcelable {
     private String explicit;
     private boolean blocked;
     private boolean isClosedCaptioned;
-    private int hours, minutes, seconds, playback_position;
+    private boolean finished;
+    private int hours, minutes, seconds,
+            playback_position;//in milliseconds
+    private long database_id;
     private float length;//in bytes
     private URL guid;
     private URL link;//website link
     private URL url;
     private Date pubDate;
     private File localFile;
-    private Podcast podcast;
+    private Podcast parent;
 
     private boolean downloading;
 
@@ -59,14 +65,16 @@ public class Episode implements Parcelable {
         explicit = "";
         blocked = false;
         isClosedCaptioned = false;
+        finished = false;
         hours = minutes = seconds = playback_position = 0;
+        database_id = 0;
         length = 0;
         guid = null;
         link = null;
         url = null;
         pubDate = null;
         localFile = null;
-        podcast = null;
+        parent = null;
         downloading = false;
     }
 
@@ -81,10 +89,12 @@ public class Episode implements Parcelable {
         explicit = parcel.readString();
         blocked = (parcel.readByte() != 0);
         isClosedCaptioned = (parcel.readByte() != 0);
+        finished = (parcel.readByte() != 0);
         hours = parcel.readInt();
         minutes = parcel.readInt();
         seconds = parcel.readInt();
         playback_position = parcel.readInt();
+        database_id = parcel.readLong();
         length = parcel.readFloat();
         try{
             guid = new URL(parcel.readString());
@@ -100,8 +110,27 @@ public class Episode implements Parcelable {
         String filename = parcel.readString();
         if(!filename.equals(""))
             localFile = new File(filename);
-        int parent_id = parcel.readInt();
+        try{
+            parent = parcel.readParcelable(Podcast.class.getClassLoader());
+        } catch(Exception e){
+            Log.e(TAG,"",e);
+        }
+    }
 
+    /**
+     * This method copies pertinent local info (localFile, id) from
+     * an episode pulled from the database and adds it to this.
+     * This is done because there's no way to only fetch undownloaded
+     * podcasts from the internet, so we copy important info from the
+     * database.
+     * @param other
+     */
+    public void copyLocalInfo(Episode other){
+        this.localFile = other.getLocalFile();
+        this.database_id = other.getId();
+        this.playback_position = other.getPlaybackPosition();
+        this.parent = other.getParent();
+        this.finished = other.isFinished();
     }
 
     public void setField(String declaredField, Object val){
@@ -182,6 +211,11 @@ public class Episode implements Parcelable {
         s+=seconds;
         return s;
     }
+    public int getDurationInMilliseconds(){
+        return (hours * 60 * 60 * 1000) +
+               (minutes * 60 * 1000)+
+               (seconds * 1000);
+    }
 
     public void setLink(URL link){
         this.link = link;
@@ -225,6 +259,9 @@ public class Episode implements Parcelable {
     public void setPlaybackPosition(int position){
         this.playback_position = position;
     }
+    public void setId(int id){
+        database_id = id;
+    }
 
     public void setLength(float length){
         this.length = length;
@@ -254,7 +291,7 @@ public class Episode implements Parcelable {
         }
     }
     public void setParent(Podcast podcast){
-        this.podcast = podcast;
+        this.parent = podcast;
     }
 
     public String getTitle(){
@@ -300,6 +337,9 @@ public class Episode implements Parcelable {
     public int getPlaybackPosition(){
         return playback_position;
     }
+    public long getId(){
+        return database_id;
+    }
     public float getLength(){
         return length;
     }
@@ -313,15 +353,31 @@ public class Episode implements Parcelable {
         return url;
     }
     public URL getMediaURL(){
-        if(guid != null)
-            return guid;
-        return url;
+        URL mediaUrl = guid;
+        if(guid == null)
+            return url;
+        else{
+            String urlString = mediaUrl.toString();
+            String fileName = urlString.substring(urlString.lastIndexOf('/') + 1);
+            if(fileName.equals("") || fileName.lastIndexOf('.') == -1){
+                //Somebody didn't read the podcast specs right, which we need to account for.
+                return url;
+            }
+        }
+        return mediaUrl;
     }
     public File getLocalFile(){
         return localFile;
     }
     public Podcast getParent(){
-        return podcast;
+        return parent;
+    }
+
+    public void deleteLocalFile(){
+        if(localFile != null){
+            localFile.delete();
+            localFile = null;
+        }
     }
 
     public void download(View view){
@@ -332,8 +388,10 @@ public class Episode implements Parcelable {
         }
     }
     public boolean isDownloaded(){
-        //todo: add some sophistication, like checking if the file exists
-        return localFile != null;
+        return (localFile != null && localFile.exists());
+    }
+    public boolean isFinished(){
+        return finished;
     }
     /**
      * This class downloads the episode to local storage.
@@ -346,7 +404,7 @@ public class Episode implements Parcelable {
         private WifiManager.WifiLock wifiLock;
         public RetrieveMediaTask(View view){
             context = view.getContext();
-            title = (TextView)view.findViewById(R.id.title);
+            title = (TextView)view.findViewById(R.id.list_item_title);
             progressBar = (ProgressBar)view.findViewById(R.id.episode_download_progress_bar);
             progressBar.setIndeterminate(false);
             progressBar.setMax(100);
@@ -370,15 +428,15 @@ public class Episode implements Parcelable {
             try {
 
                 URL mediaUrl = Episode.this.getMediaURL();
+                String urlString = mediaUrl.toString();
+                String fileName = urlString.substring(urlString.lastIndexOf('/') + 1);
                 connection = (HttpURLConnection)mediaUrl.openConnection();
                 if(connection.getResponseCode() == HttpURLConnection.HTTP_OK){
                     int fileLength = connection.getContentLength();
-                    String urlString = mediaUrl.toString();
-                    String fileName = urlString.substring(urlString.lastIndexOf('/') + 1);
 
                     File meta = new File(PodcastActivity.getAppContext().getFilesDir(),"meta");
                     meta.mkdirs();
-                    File dir = new File(meta,podcast.getArtistName().replace(' ', '_'));
+                    File dir = new File(meta, parent.getArtistName().replace(' ', '_'));
                     dir.mkdirs();
                     localFile = new File(dir,fileName);
                     localFile.createNewFile();
@@ -397,7 +455,7 @@ public class Episode implements Parcelable {
                 }
 
             } catch (IOException e) {
-                Log.e("test","",e);
+                Log.e(TAG,"",e);
                 return null;
             } finally {
                 try {
@@ -406,7 +464,7 @@ public class Episode implements Parcelable {
                     if(input != null)
                         input.close();
                 } catch (IOException e) {
-                    Log.e("test","",e);
+                    Log.e(TAG,"",e);
                 }
             }
             return null;
@@ -425,7 +483,7 @@ public class Episode implements Parcelable {
             int color = context.getResources().getColor(R.color.downloaded_text_color);
             title.setTextColor(color);
             Database database = new Database(context);
-            database.addEpisode(Episode.this);
+            Episode.this.database_id = database.addEpisode(Episode.this);
             database.closeDB();
             downloading = false;
             wifiLock.release();
@@ -460,7 +518,6 @@ public class Episode implements Parcelable {
         return this.title.equals(((Episode)other).title);
     }
 
-
     public int describeContents() {
         return 0;
     }
@@ -476,10 +533,12 @@ public class Episode implements Parcelable {
         parcel.writeString(explicit);
         parcel.writeByte((byte) (blocked ? 1 : 0));
         parcel.writeByte((byte) (isClosedCaptioned ? 1 : 0));
+        parcel.writeByte((byte) (finished ? 1 : 0));
         parcel.writeInt(hours);
         parcel.writeInt(minutes);
         parcel.writeInt(seconds);
         parcel.writeInt(playback_position);
+        parcel.writeLong(database_id);
         parcel.writeFloat(length);
         if(guid != null)
             parcel.writeString(guid.toString());
@@ -498,7 +557,7 @@ public class Episode implements Parcelable {
             parcel.writeString("");
         else
             parcel.writeString(localFile.getAbsolutePath());
-        parcel.writeInt(podcast.getCollectionId());
+        parcel.writeParcelable(parent,flags);
     }
     public static final Parcelable.Creator<Episode> CREATOR
             = new Parcelable.Creator<Episode>() {

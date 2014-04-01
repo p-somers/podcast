@@ -11,6 +11,8 @@ import android.util.Log;
  * Created by petersomers on 12/27/13.
  */
 public class Database extends SQLiteOpenHelper {
+    private static final String TAG = PodcastActivity.class.getName();
+
     public static final String TABLE_SUBSCRIPTIONS = "subscriptions";
     public static final String COLUMN_COLLECTION_ID = "collection_id";
     public static final String COLUMN_TRACK_ID = "track_id";
@@ -67,6 +69,7 @@ public class Database extends SQLiteOpenHelper {
     public static final String COLUMN_PUBDATE = "pubDate";
     public static final String COLUMN_LOCAL_FILE = "localFile";
     public static final String COLUMN_PLAYBACK_POSITION = "playback_position";
+    public static final String COLUMN_EPISODE_FINISHED = "episode_finished";
 
     private static final String DATABASE_NAME = "subscriptions.db";
     private static final int DATABASE_VERSION = 1;
@@ -137,12 +140,13 @@ public class Database extends SQLiteOpenHelper {
             + COLUMN_URL + " text, "
             + COLUMN_PUBDATE + " text, "
             + COLUMN_LOCAL_FILE + " text, "
-            + COLUMN_PLAYBACK_POSITION + " integer default 0"
+            + COLUMN_PLAYBACK_POSITION + " integer default 0, "
+            + COLUMN_EPISODE_FINISHED + " boolean default 0"
             + ");";
 
     public Database(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
-        this.context = context;
+        this.context = context.getApplicationContext();
     }
 
     @Override
@@ -210,8 +214,12 @@ public class Database extends SQLiteOpenHelper {
 
         // insert row
         long podcast_id = db.insert(TABLE_SUBSCRIPTIONS, null, values);
-
         return podcast_id;
+    }
+    public int unsubscribeFrom( long id ){
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_SUBSCRIPTIONS,COLUMN_ID+" = "+id,null);
+        return db.delete(TABLE_EPISODES,COLUMN_PARENT_ID+" = "+id,null);
     }
 
     public boolean isSubscribedTo(Podcast podcast){
@@ -237,6 +245,14 @@ public class Database extends SQLiteOpenHelper {
         return podcasts;
     }
 
+    public Podcast podcastFromId(int id){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_SUBSCRIPTIONS,null,COLUMN_ID+"="+id,null,null,null,null);
+        if(!cursor.moveToFirst() || cursor.getCount() == 0)
+            return null;
+        return podcastFromCursor(cursor);
+    }
+
     private Podcast podcastFromCursor(Cursor cursor){
         int cid = cursor.getInt(cursor.getColumnIndex(COLUMN_ID));
         int tid = cursor.getInt(cursor.getColumnIndex(COLUMN_TRACK_ID));
@@ -252,10 +268,14 @@ public class Database extends SQLiteOpenHelper {
         String cvu  = cursor.getString(cursor.getColumnIndex(COLUMN_COLLECTION_VIEW_URL));
         String furl = cursor.getString(cursor.getColumnIndex(COLUMN_FEED_URL));
         String turl = cursor.getString(cursor.getColumnIndex(COLUMN_TRACKVIEW_URL));
-        String a30  = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_30_URL));
-        String a60  = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_60_URL));
-        String a100  = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_100_URL));
-        String a600  = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_600_URL));
+        String a30file  = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_30_PATH ));
+        String a60file  = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_60_PATH ));
+        String a100file = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_100_PATH));
+        String a600file = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_600_PATH));
+        String a30url   = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_30_URL ));
+        String a60url   = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_60_URL ));
+        String a100url  = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_100_URL));
+        String a600url  = cursor.getString(cursor.getColumnIndex(COLUMN_ARTWORK_600_URL));
         String rdate = cursor.getString(cursor.getColumnIndex(COLUMN_RELEASE_DATE));
         String country = cursor.getString(cursor.getColumnIndex(COLUMN_COUNTRY));
         String curr = cursor.getString(cursor.getColumnIndex(COLUMN_CURRENCY));
@@ -276,9 +296,14 @@ public class Database extends SQLiteOpenHelper {
                 Log.e("test","",ex);
             }
         String genres[] = cursor.getString(cursor.getColumnIndex(COLUMN_GENRES)).split(",");
-        return new Podcast(cid, tid, tcount, genre_ids, cprice, tprice, wt, aname,cname, cname_cens,
-                tname, tname_cens, a30, a60, a100, a600, pgenrename, rdate, country, genres, cvu,
-                furl,turl, curr, c_exp,t_exp, context);
+        Podcast podcast = new Podcast(cid, tid, tcount, genre_ids, cprice, tprice, wt, aname,cname,
+                cname_cens, tname, tname_cens, a30url, a60url, a100url, a600url, pgenrename, rdate,
+                country, genres, cvu, furl,turl, curr, c_exp,t_exp, context);
+        podcast.setArtworkFile(30, a30file );
+        podcast.setArtworkFile(60, a60file );
+        podcast.setArtworkFile(100,a100file);
+        podcast.setArtworkFile(600,a600file);
+        return podcast;
     }
 
     public long addEpisode(Episode episode){
@@ -325,7 +350,6 @@ public class Database extends SQLiteOpenHelper {
         }
         // insert row
         long episode_id = db.insert(TABLE_EPISODES, null, values);
-
         return episode_id;
     }
 
@@ -344,9 +368,42 @@ public class Database extends SQLiteOpenHelper {
         return episodes;
     }
 
+    public Episode getEpisodeById(long id){
+        Episode episode = null;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_EPISODES,null,COLUMN_ID+"="+id,null,null,null,null);
+        if(cursor.moveToFirst()){
+            episode = episodeFromCursor(cursor);
+            int parent_id = cursor.getInt(cursor.getColumnIndex(COLUMN_PARENT_ID));
+            Podcast parent = podcastFromId(parent_id);
+            episode.setParent(parent);
+        }
+        return episode;
+    }
+
+    public int setEpisodePlaybackPosition(long id, int pos){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PLAYBACK_POSITION, pos);
+        return db.update(TABLE_EPISODES,values,COLUMN_ID+" = "+id,null);
+    }
+
+    public void markEpisodeFinished(long id){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_EPISODE_FINISHED,true);
+        values.put(COLUMN_LOCAL_FILE,"");
+        db.update(TABLE_EPISODES,values,COLUMN_ID+" = "+id,null);
+    }
+
     private Episode episodeFromCursor(Cursor cursor, Podcast parent){
-        Episode episode = new Episode();
+        Episode episode = episodeFromCursor(cursor);
         episode.setParent(parent);
+        return episode;
+    }
+    private Episode episodeFromCursor(Cursor cursor){
+        Episode episode = new Episode();
+        episode.setField("database_id", cursor.getInt(cursor.getColumnIndex(COLUMN_ID)));
         episode.setField("title",cursor.getString(cursor.getColumnIndex(COLUMN_TITLE)));
         episode.setField("copyright",cursor.getString(cursor.getColumnIndex(COLUMN_COPYRIGHT)));
         episode.setField("author",cursor.getString(cursor.getColumnIndex(COLUMN_AUTHOR)));
@@ -357,6 +414,7 @@ public class Database extends SQLiteOpenHelper {
         episode.setField("explicit",cursor.getString(cursor.getColumnIndex(COLUMN_EXPLICIT)));
         episode.setField("blocked",cursor.getInt(cursor.getColumnIndex(COLUMN_BLOCKED))>0);
         episode.setField("isClosedCaptioned",cursor.getInt(cursor.getColumnIndex(COLUMN_ISCLOSEDCAPTIONED))>0);
+        episode.setField("finished",cursor.getInt(cursor.getColumnIndex(COLUMN_EPISODE_FINISHED))>0);
         episode.setField("hours",cursor.getInt(cursor.getColumnIndex(COLUMN_HOURS)));
         episode.setField("minutes",cursor.getInt(cursor.getColumnIndex(COLUMN_MINUTES)));
         episode.setField("seconds",cursor.getInt(cursor.getColumnIndex(COLUMN_SECONDS)));
@@ -375,5 +433,22 @@ public class Database extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         if(db != null && db.isOpen())
             db.close();
+    }
+
+    private void printPodcastInfo(long id){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_SUBSCRIPTIONS,null,COLUMN_ID+"="+id,null,null,null,null);
+        if(cursor.getCount() == 0){
+            Log.d(TAG,"No results");
+            return;
+        }
+        String s = "\n";
+        if(cursor.moveToFirst()){
+            for(int i = 0; i < cursor.getColumnCount(); i++){
+                String column = cursor.getColumnName(i);
+                s += "\t"+column+": "+cursor.getString(i)+"\n";
+            }
+        }
+        Log.d(TAG,s);
     }
 }
