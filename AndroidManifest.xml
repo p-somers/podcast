@@ -15,8 +15,8 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.android.podcastapp"
-    android:versionCode="1"
+    package="somers.pw.podcastmanager"
+    android:versionCode="2"
     android:versionName="1.0" >
 
     <uses-sdk android:minSdkVersion="4"
@@ -33,7 +33,7 @@
         android:label="@string/app_name" >
 
         <activity
-            android:name=".PodcastActivity"
+            android:name="somers.pw.podcastmanager.PodcastActivity"
             android:theme="@android:style/Theme.Black.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -42,29 +42,21 @@
             </intent-filter>
         </activity>
         <activity
-            android:label="SettingsActivity"
-            android:name=".SettingsActivity">
-             <intent-filter>
-                <action android:name="android.intent.action.MANAGE_NETWORK_USAGE" />
-                <category android:name="android.intent.category.DEFAULT" />
-          </intent-filter>
-        </activity>
-        <activity
             android:label="SearchActivity"
-            android:name=".SearchActivity"
+            android:name="somers.pw.podcastmanager.SearchActivity"
             android:theme="@android:style/Theme.Black.NoTitleBar"/>
         <activity
             android:label="PodcastListActivity"
-            android:name=".PodcastListActivity"
+            android:name="somers.pw.podcastmanager.PodcastListActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@android:style/Theme.Black.NoTitleBar"/>
         <activity
-            android:name=".PodcastViewActivity"
+            android:name="somers.pw.podcastmanager.PodcastViewActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@android:style/Theme.Black.NoTitleBar"
             />
         <activity
-            android:name=".MediaPlayerActivity"
+            android:name="somers.pw.podcastmanager.MediaPlayerActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Black.NoTitleBar"
