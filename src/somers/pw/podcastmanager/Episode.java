@@ -129,15 +129,24 @@ public class Episode implements Parcelable {
      */
     public void copyLocalInfo(Episode other){
         this.localFile = other.getLocalFile();
+        if(isDownloaded()){
+            //Log.d(TAG,"-\nDownloaded episode:\n"+this.title+"\n"+this.localFile);
+        }
         this.database_id = other.getId();
         this.playback_position = other.getPlaybackPosition();
         this.parent = other.getParent();
         this.finished = other.isFinished();
+        if(this.finished){
+            //Log.d(TAG,"Finished episode: "+this.title);
+        }
     }
 
     public void setField(String declaredField, Object val){
         try {
-            Field field = this.getClass().getDeclaredField(declaredField);
+            /*
+                Note: casting to Object because of a bug in Android Studio/Intellij IDEA
+             */
+            Field field = ((Object)this).getClass().getDeclaredField(declaredField);
             field.set(this,val);
         } catch (NoSuchFieldException e) {
             Log.e("test","",e);
@@ -303,6 +312,9 @@ public class Episode implements Parcelable {
         return copyright;
     }
     public Date getPubDate(){
+        if(pubDate == null){
+            pubDate = new Date();
+        }
         return pubDate;
     }
     public String getAuthor(){
@@ -493,6 +505,8 @@ public class Episode implements Parcelable {
                 title.setTextColor(color);
                 Database database = new Database(context);
                 Episode.this.database_id = database.addEpisode(Episode.this);
+                //Log.d(TAG,"Added #"+Episode.this.database_id+" with parent id #"+parent.getCollectionId());
+                //database.logPodcastEpisodes(parent);
                 database.closeDB();
                 downloading = false;
                 wifiLock.release();

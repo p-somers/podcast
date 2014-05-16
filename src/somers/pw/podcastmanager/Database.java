@@ -231,6 +231,19 @@ public class Database extends SQLiteOpenHelper {
         return tf;
     }
 
+    public boolean episodeIsDownloaded(Episode episode, Podcast parent){
+        return episodeIsDownloaded(episode.getTitle(),parent.getCollectionId());
+    }
+
+    public boolean episodeIsDownloaded(String title, long parent_id){
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.query(TABLE_EPISODES,null,COLUMN_TITLE+"=\""+title+"\" and "+COLUMN_PARENT_ID+"="+parent_id,
+                null,null,null,null);
+        boolean tf = cursor.getCount() > 0;
+        cursor.close();
+        return tf;
+    }
+
     public Podcast[] getSubscriptions(){
         Podcast podcasts[] = null;
         SQLiteDatabase db = this.getReadableDatabase();
@@ -310,6 +323,11 @@ public class Database extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
 
+        if(episodeIsDownloaded(episode,episode.getParent())){
+            Log.e(TAG,"Episode already downloaded: "+episode.getTitle());
+            return -1;
+        }
+
         values.put(COLUMN_PARENT_ID,episode.getParent().getCollectionId());
         values.put(COLUMN_TITLE,episode.getTitle());
         values.put(COLUMN_COPYRIGHT,episode.getCopyright());
@@ -387,13 +405,38 @@ public class Database extends SQLiteOpenHelper {
         values.put(COLUMN_PLAYBACK_POSITION, pos);
         return db.update(TABLE_EPISODES,values,COLUMN_ID+" = "+id,null);
     }
+    public int getEpisodePlaybackPosition(long id){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String columns[] = {COLUMN_PLAYBACK_POSITION};
+        Cursor cursor = db.query(TABLE_EPISODES,columns,COLUMN_ID+"="+id,null,null,null,null);
+        if(cursor.moveToFirst()){
+            return cursor.getInt(cursor.getColumnIndex(COLUMN_PLAYBACK_POSITION));
+        }
+        return -1;
+    }
 
-    public void markEpisodeFinished(long id){
+    public boolean markEpisodeFinished(Episode episode){
+        long id = episode.getId();
+        if(id < 1){
+            //episode has not been downloaded
+            id = addEpisode(episode);
+        }else {
+            episode.deleteLocalFile();
+        }
+        return markEpisodeFinished(id);
+    }
+
+    public boolean markEpisodeFinished(long id){
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(COLUMN_EPISODE_FINISHED,true);
-        values.put(COLUMN_LOCAL_FILE,"");
-        db.update(TABLE_EPISODES,values,COLUMN_ID+" = "+id,null);
+        values.put(COLUMN_EPISODE_FINISHED, true);
+        values.put(COLUMN_LOCAL_FILE, "");
+        assert db != null;
+        if (db.update(TABLE_EPISODES, values, COLUMN_ID + " = " + id, null) == 0) {
+            Log.e(TAG, "No rows updated when trying to mark #" + id + " as finished");
+            return false;
+        }
+        return true;
     }
 
     private Episode episodeFromCursor(Cursor cursor, Podcast parent){
@@ -435,7 +478,7 @@ public class Database extends SQLiteOpenHelper {
             db.close();
     }
 
-    private void printPodcastInfo(long id){
+    public void logPodcastInfo(long id){
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_SUBSCRIPTIONS,null,COLUMN_ID+"="+id,null,null,null,null);
         if(cursor.getCount() == 0){
@@ -450,5 +493,17 @@ public class Database extends SQLiteOpenHelper {
             }
         }
         Log.d(TAG,s);
+    }
+
+    public void logPodcastEpisodes(Podcast podcast){
+        Episode[] episodes = getEpisodes(podcast);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Number of results: ").append(episodes.length).append("\n");
+        for(Episode episode: episodes){
+            sb.append(episode.getTitle()).append("\n");
+            sb.append(episode.isFinished()).append("\n");
+            sb.append("-------------------------------------------------------------\n");
+        }
+        Log.d(TAG,sb.toString());
     }
 }

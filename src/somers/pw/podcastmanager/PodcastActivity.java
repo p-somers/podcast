@@ -14,17 +14,14 @@
 
 package somers.pw.podcastmanager;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,7 +29,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import somers.pw.podcastmanager.Adapters.SubscriptionArrayAdapter;
 
@@ -62,6 +58,10 @@ public class PodcastActivity extends Activity {
         Thread.setDefaultUncaughtExceptionHandler(mUEhandler);
 
         db = new Database(this);
+        ActionBar actionBar = getActionBar();
+        if(actionBar != null) {
+            actionBar.show();
+        }
     }
 
     public void onClick(View view){
@@ -79,6 +79,31 @@ public class PodcastActivity extends Activity {
     public void onStart() {
         super.onStart();
         loadSubscriptions();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d(TAG,"creating the menu");
+        // Inflate the menu items for use in the action bar
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.mainmenu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle presses on the action bar items
+        switch (item.getItemId()) {
+            case R.id.action_search:
+                Intent searchActivity = new Intent(getBaseContext(), SearchActivity.class);
+                startActivity(searchActivity);
+                return true;
+            case R.id.action_settings:
+                Log.d(TAG,"settings button pushed");
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     public static boolean internetConnected(){

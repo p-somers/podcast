@@ -26,18 +26,18 @@ public class XMLParser extends AsyncTask<URL, Void, Void> {
 
     @Override
     protected Void doInBackground(URL... urls) {
+        URL url = urls[0];
         try {
-            URL url = urls[0];
             SAXParserFactory factory =SAXParserFactory.newInstance();
             SAXParser parser=factory.newSAXParser();
             XMLReader xmlreader=parser.getXMLReader();
             RSSHandler rh = new RSSHandler(activity);
-            rh.setMaxNumOfEpisodes(PodcastViewActivity.MAX_EPISODES_LOADED);
             xmlreader.setContentHandler(rh);
             xmlreader.parse(new InputSource(url.openStream()));
         } catch ( RSSHandler.MaxNumOfEpisodesException ex) {//ignore
         } catch (Exception e) {
             Log.e(TAG,"",e);
+            Log.e(TAG, url.toString());
         }
         return null;
     }

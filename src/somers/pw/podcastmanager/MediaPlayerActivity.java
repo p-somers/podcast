@@ -25,6 +25,7 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
         MediaPlayer.OnErrorListener, MediaPlayer.OnCompletionListener{
     private static final String TAG = PodcastActivity.class.getName();
     private enum State {Idle, Initialized, Preparing, Prepared, Started, Paused, Stopped, PlaybackCompleted, Error}
+    private static boolean autoplay = true;
 
     private final int SEEKBAR_ANIMATION_STEP_LENGTH = 10;
 
@@ -40,7 +41,9 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
     private MyReceiver onBecomeNoisyReceiver;
     private Handler seekBarHandler;
     private long ids[];
+    private long finished_episode_ids[];
     private int episode_array_position;
+    private int finished_episode_array_position;
     private int last_player_position;//in case the user accidentally presses "back"
     private State state;
 
@@ -54,6 +57,11 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
         Bundle extras = data.getExtras();
         Episode episode = extras.getParcelable("episode");
         ids = extras.getLongArray("ids");
+        finished_episode_ids = new long[ids.length];
+        for(int i = 0; i<finished_episode_ids.length; i++){
+            finished_episode_ids[i] = -1;
+        }
+        finished_episode_array_position = 0;
         episode_array_position = extras.getInt("position");
 
         seekBarBeingMoved = false;
@@ -96,19 +104,20 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
         onBecomeNoisyReceiver = new MyReceiver();
         registerReceiver(onBecomeNoisyReceiver,
                 new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
+        registerReceiver(new MyReceiver(),new IntentFilter(Intent.ACTION_HEADSET_PLUG));
         super.onResume();
     }
 
     @Override
     public void onPause(){
-        database.setEpisodePlaybackPosition(episode.getId(),player.getCurrentPosition());
-        database.closeDB();
+        saveCurrentPosition();
         unregisterReceiver(onBecomeNoisyReceiver);
         super.onPause();
     }
 
     @Override
     public void onDestroy(){
+        saveCurrentPosition();
         super.onDestroy();
         if(player != null)
             player.release();
@@ -127,6 +136,7 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
         title.setText(episode.getTitle());
         summary.setText(episode.getSummary());
         try {
+            play_pause.setEnabled(false);
             FileInputStream inputStream = new FileInputStream(episode.getLocalFile());
             player.reset();
             player.setDataSource(inputStream.getFD());
@@ -136,6 +146,19 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
         } catch (Exception e) {
             Log.e(TAG,"",e);
         }
+    }
+
+    /**
+     * Writes the current position to the database.
+     */
+    private void saveCurrentPosition(){
+        if(state != State.PlaybackCompleted) {
+            int playback_pos = player.getCurrentPosition();//Saved for logging/debugging
+            int rows_affected = database.setEpisodePlaybackPosition(episode.getId(), playback_pos);
+            //Log.d(TAG,"saving pos of #"+episode.getId()+": "+playback_pos+"\nRows changed: "+rows_affected);
+            //Log.d(TAG,"Hey now!! "+database.getEpisodePlaybackPosition(15l));
+        }
+        database.closeDB();
     }
 
     /**
@@ -158,14 +181,15 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
             }
             public void onStopTrackingTouch(SeekBar seekBar) {
                 seekBarBeingMoved = false;
-                if(player != null)
+                if(player != null) {
                     player.start();
+                }
             }
         });
         seekBarHandler = new Handler();
         Runnable moveSeekBar = new Runnable() {
             public void run() {
-                if(player != null){
+                if(player != null && state != State.PlaybackCompleted){
                     int pos = player.getCurrentPosition();
                     playback_bar.setProgress(pos);
                     time_elapsed.setText(millisecondsToTimeElapsed(pos));
@@ -211,10 +235,20 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
     /** Called when MediaPlayer is ready */
     public void onPrepared(MediaPlayer player) {
         state = State.Prepared;
-        player.seekTo(episode.getPlaybackPosition());
+        int playback_position = database.getEpisodePlaybackPosition(episode.getId());
+        if(playback_position == -1){
+            Log.d(TAG,"Reading from database failed");
+            playback_position = episode.getPlaybackPosition();
+        }
+        //Log.d(TAG,"#"+episode.getId()+"'s position: "+playback_position);
+        player.seekTo(playback_position);
+        play_pause.setImageResource(R.drawable.play);
         play_pause.setEnabled(true);
         preparePlaybackBar();
         duration.setText(millisecondsToTimeElapsed(player.getDuration()));
+        if(MediaPlayerActivity.autoplay){
+            play();
+        }
     }
 
     public void play_pause(){
@@ -229,24 +263,28 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
     public boolean onError(MediaPlayer mediaPlayer, int i, int i2) {
         state = State.Error;
         if(i==MediaPlayer.MEDIA_ERROR_SERVER_DIED)
-            Log.e("test","server died");
+            Log.e(TAG,"server died");
         else if(i==MediaPlayer.MEDIA_ERROR_UNKNOWN)
-            Log.e("test","unknown error");
+            Log.e(TAG,"unknown error");
         if(i2==MediaPlayer.MEDIA_ERROR_IO)
-            Log.e("test","io error");
+            Log.e(TAG,"io error");
         else if(i2==MediaPlayer.MEDIA_ERROR_MALFORMED)
-            Log.e("test","malformed");
+            Log.e(TAG,"malformed");
         else if(i2==MediaPlayer.MEDIA_ERROR_UNSUPPORTED)
-            Log.e("test","unsupported");
+            Log.e(TAG,"unsupported");
+        else
+            Log.e(TAG,"unknown error. i="+i+", i2="+i2);
         return false;
     }
 
     private void previous(){
+        saveCurrentPosition();
         episode_array_position -= 1;
         prepareEpisode(database.getEpisodeById(ids[episode_array_position]));
     }
 
     private void next(){
+        saveCurrentPosition();
         episode_array_position += 1;
         prepareEpisode(database.getEpisodeById(ids[episode_array_position]));
     }
@@ -255,8 +293,38 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
         if(!seekBarBeingMoved){//Stupid MediaPlayer...
             state = State.PlaybackCompleted;
             episode.deleteLocalFile();
-            setResult(PodcastViewActivity.EPISODE_FINISHED, data);
-            finish();
+            setResult(PodcastViewActivity.EPISODES_FINISHED, data);
+            if(episode_array_position == ids.length-1) {//LAST EPISODE... go back
+                finished_episode_ids[finished_episode_array_position] = ids[episode_array_position];
+                Log.d(TAG,"ids");
+                for(int i=0; i<ids.length; i++){
+                    Log.d(TAG,ids[i]+"");
+                }
+                Log.d(TAG,"finished");
+                for(int i=0; i<finished_episode_ids.length; i++){
+                    Log.d(TAG,finished_episode_ids[i]+"");
+                }
+                data.putExtra("finised_episodes",finished_episode_ids);
+                setResult(PodcastViewActivity.EPISODES_FINISHED, data);
+                if(player != null)
+                    player.release();
+                finish();
+            } else {//Move on to next episode
+                /* Note: we don't call next here because:
+                 * a) we're not saving the playback position
+                 * b) we're deleting an element from the ids array,
+                 * so the episode_array_position does not get incremented.
+                 */
+                //database.markEpisodeFinished(episode.getId());
+                long _ids[] = new long[ids.length-1];
+                finished_episode_ids[finished_episode_array_position++] = ids[episode_array_position];
+                System.arraycopy(ids, 0, _ids, 0, episode_array_position );
+                System.arraycopy(ids, episode_array_position+1, _ids, episode_array_position,
+                        ids.length - episode_array_position-1);
+                ids = _ids;
+
+                prepareEpisode(database.getEpisodeById(ids[episode_array_position]));
+            }
         }
     }
 
@@ -272,11 +340,12 @@ public class MediaPlayerActivity extends Activity implements MediaPlayer.OnPrepa
      */
     private class MyReceiver extends BroadcastReceiver{
         public void onReceive(Context ctx, Intent intent) {
-            if (intent.getAction().equals(
-                    android.media.AudioManager.ACTION_AUDIO_BECOMING_NOISY)) {
-                if(player != null){
+            if (intent.getAction().equals(AudioManager.ACTION_AUDIO_BECOMING_NOISY)) {
+                if (player != null) {
                     pause();
                 }
+            } else if (intent.getAction().equals(Intent.ACTION_HEADSET_PLUG)){
+
             }
         }
     }

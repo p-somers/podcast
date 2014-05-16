@@ -18,7 +18,7 @@
 
 <resources>
 
-    <string name="app_name">Podcast Test</string>
+    <string name="app_name">Podcast Manager</string>
 
     <!-- Main screen -->
     <string name="to_search_screen">Search for a podcast</string>
@@ -100,5 +100,15 @@
     <!-- useful note on alpha values: http://stackoverflow.com/a/16890937/1955559 -->
     <color name="player_summary_background">#99000000</color>
     <string name="player_text_padding">20dp</string>
+    <string name="max_downloads_message">Currently running the maximum number of downloads</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_search">Search</string>
+    <string name="episode_detail_delete">Delete Episode (Hold Button)</string>
+    <string name="episode_detail_ok">Ok</string>
+    <string name="episode_detail_date_format">MMMMMMMMM dd, yyyy</string>
+    <string name="episode_detail_mark_finished">Mark "finished"</string>
+
+    <!-- Not *really* using this at the moment -->
+    <integer name="max_episodes_loaded">500</integer>
 
 </resources>

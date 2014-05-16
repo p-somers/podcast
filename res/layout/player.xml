@@ -33,6 +33,8 @@
 
     <SeekBar
         android:id="@+id/playback_position"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/player_time_elpased" />

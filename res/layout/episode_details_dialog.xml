@@ -1,36 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/episode_details_padding">
     <TextView
-        android:id="@+id/episode_duration"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
+        android:id="@+id/episode_detail_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Title"
+        android:textSize="@dimen/episode_details_title_font_size" />
+    <TextView
+        android:id="@+id/episode_detail_duration"
+        android:layout_below="@+id/episode_detail_title"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="00:00:00"/>
     <TextView
-        android:id="@+id/episode_pubdate"
-        android:layout_above="@+id/episode_summary"
+        android:id="@+id/episode_detail_pubdate"
         android:layout_alignParentRight="true"
+        android:layout_above="@+id/episode_detail_summary"
+        android:layout_below="@+id/episode_detail_title"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="5/3/1991"/>
     <TextView
-        android:id="@+id/episode_summary"
-        android:layout_below="@id/episode_duration"
+        android:id="@+id/episode_detail_summary"
+        android:layout_below="@id/episode_detail_duration"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="20dp"/>
+        android:text="Episode summary."/>
     <Button
-        android:id="@+id/episode_view_dialog_button_ok"
-        android:layout_below="@id/episode_summary"
+        android:id="@+id/episode_detail_ok"
+        android:layout_below="@id/episode_detail_summary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ok" />
+        android:layout_marginTop="@dimen/episode_details_padding"
+        android:text="@string/episode_detail_ok" />
     <Button
-        android:id="@+id/episode_view_delete_episode"
-        android:layout_below="@id/episode_view_dialog_button_ok"
+        android:id="@+id/episode_detail_delete"
+        android:layout_below="@id/episode_detail_ok"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Delete Episode (Hold Button)"
+        android:text="@string/episode_detail_delete"
         />
+    <Button
+        android:id="@+id/episode_detail_mark_finished"
+        android:layout_below="@id/episode_detail_delete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/episode_detail_mark_finished"/>
 </RelativeLayout>

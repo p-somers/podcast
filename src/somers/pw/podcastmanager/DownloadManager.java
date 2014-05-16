@@ -1,7 +1,5 @@
 package somers.pw.podcastmanager;
 
-import android.util.Log;
-
 /**
  * Created by petersomers on 4/14/14.
  */
@@ -21,7 +19,6 @@ public class DownloadManager {
         for(int i=0; i<max_downloads; i++){
             if(current_downloads[i]==null){
                 current_downloads[i]=episode;
-                Log.d(TAG,"Registered index #"+i );
                 return true;
             }
         }
@@ -32,7 +29,6 @@ public class DownloadManager {
         for(int i=0; i<max_downloads; i++){
             if(current_downloads[i]==episode){
                 current_downloads[i]=null;
-                Log.d(TAG,"Unregistered index #"+i );
                 break;
             }
         }
