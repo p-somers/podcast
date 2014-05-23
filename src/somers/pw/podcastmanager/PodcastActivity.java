@@ -83,7 +83,6 @@ public class PodcastActivity extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        Log.d(TAG,"creating the menu");
         // Inflate the menu items for use in the action bar
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.mainmenu, menu);
@@ -138,31 +137,5 @@ public class PodcastActivity extends Activity {
             });
             list.setAdapter(adapter);
         }
-    }
-    private boolean onItemLongClick(AdapterView<?> parent, View view, int position, long l) {
-        Podcast podcast = subscriptions[position];
-        final Dialog dialog = new Dialog(PodcastActivity.this);
-        /*
-        Episode episode = episodes_arraylist.get(position);
-        final Dialog dialog = new Dialog(PodcastViewActivity.this);
-        dialog.setContentView(R.layout.episode_view);
-        dialog.setTitle(episode.getTitle());
-
-        TextView summary = (TextView)dialog.findViewById(R.id.episode_summary);
-        TextView duration = (TextView)dialog.findViewById(R.id.episode_duration);
-        TextView pubDate = (TextView)dialog.findViewById(R.id.episode_pubdate);
-        summary.setText(episode.getSummary());
-        duration.setText(episode.getDuration());
-        pubDate.setText(episode.getPubDate().toString());
-
-        Button button = (Button)dialog.findViewById(R.id.episode_view_dialog_button_ok);
-        button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                dialog.dismiss();
-            }
-        });
-        dialog.show();
-        */
-        return true;
     }
 }
