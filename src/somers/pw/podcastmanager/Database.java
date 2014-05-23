@@ -74,16 +74,11 @@ public class Database extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "subscriptions.db";
     private static final int DATABASE_VERSION = 1;
 
-    /*
-    private boolean collectionIsExplicit;
-    private boolean trackIsExplicit;
-     */
     private static Context context;
 
     private static final String SUBSCRIPTION_DATABASE_CREATE = "create table "
             + TABLE_SUBSCRIPTIONS + "("
             + COLUMN_ID + " integer primary key, "
-            //+ COLUMN_COLLECTION_ID + " integer, "
             + COLUMN_TRACK_ID + " integer, "
             + COLUMN_TRACK_COUNT + " integer, "
             + COLUMN_GENRE_IDS + " text, "
@@ -478,6 +473,9 @@ public class Database extends SQLiteOpenHelper {
             db.close();
     }
 
+    /**
+     * Just used for debugging
+     */
     public void logPodcastInfo(long id){
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_SUBSCRIPTIONS,null,COLUMN_ID+"="+id,null,null,null,null);
@@ -495,6 +493,9 @@ public class Database extends SQLiteOpenHelper {
         Log.d(TAG,s);
     }
 
+    /**
+     * Just used for debugging
+     */
     public void logPodcastEpisodes(Podcast podcast){
         Episode[] episodes = getEpisodes(podcast);
         StringBuilder sb = new StringBuilder();
